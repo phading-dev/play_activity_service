@@ -43,7 +43,7 @@ gcloud spanner databases create ${ENV_VARS.spannerDatabaseId} --instance=${ENV_V
   args: ['spanage', 'update', 'db/ddl', '-p', '${ENV_VARS.projectId}', '-i', '${ENV_VARS.spannerInstanceId}', '-d', '${ENV_VARS.spannerDatabaseId}']
 - name: node:20.12.1
   entrypoint: npx
-  args: ['bundage', 'bfn', 'main', 'main_bin', '-e', 'environment_${env}', '-t', 'bin']
+  args: ['bundage', 'bfn', 'main', 'main_bin', '-e', 'env_${env}', '-t', 'bin']
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-t', 'gcr.io/${ENV_VARS.projectId}/${ENV_VARS.releaseServiceName}:latest', '-f', 'Dockerfile_${env}', '.']
 - name: "gcr.io/cloud-builders/docker"

@@ -7,7 +7,7 @@ steps:
   args: ['spanage', 'update', 'db/ddl', '-p', 'phading-dev', '-i', 'balanced-db-instance', '-d', 'play-activity-db']
 - name: node:20.12.1
   entrypoint: npx
-  args: ['bundage', 'bfn', 'main', 'main_bin', '-e', 'environment_dev', '-t', 'bin']
+  args: ['bundage', 'bfn', 'main', 'main_bin', '-e', 'env_dev', '-t', 'bin']
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-t', 'gcr.io/phading-dev/play-activity-service:latest', '-f', 'Dockerfile_dev', '.']
 - name: "gcr.io/cloud-builders/docker"
