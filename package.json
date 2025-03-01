@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "@google-cloud/spanner": "^7.18.1",
-    "@phading/cluster": "^0.2.6",
+    "@phading/cluster": "^1.0.0",
     "@phading/constants": "^0.3.5",
     "@phading/play_activity_service_interface": "^1.0.1",
     "@phading/user_session_service_interface": "^1.0.4",

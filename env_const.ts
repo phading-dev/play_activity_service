@@ -1,4 +1,4 @@
-import { ENV_VARS } from "./env";
+import { ENV_VARS } from "./env_vars";
 
 ENV_VARS.spannerDatabaseId = "play-activity-db";
 ENV_VARS.releaseServiceName = "play-activity-service";

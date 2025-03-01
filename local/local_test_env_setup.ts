@@ -1,5 +1,5 @@
-import "./env_local";
-import { ENV_VARS } from "./env";
+import "./env";
+import { ENV_VARS } from "../env_vars";
 import { spawnSync } from "child_process";
 
 async function main() {

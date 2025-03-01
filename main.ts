@@ -1,5 +1,5 @@
 import http = require("http");
-import { ENV_VARS } from "./env";
+import { ENV_VARS } from "./env_vars";
 import { AddToWatchLaterListHandler } from "./show/web/add_to_watch_later_list_handler";
 import { DeleteFromWatchLaterListHandler } from "./show/web/delete_from_watch_later_list_handler";
 import { GetContinueEpisodeHandler } from "./show/web/get_continue_episode";
