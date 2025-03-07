@@ -144,5 +144,4 @@ import "../main";
 }
 
 import "./dev/env";
-
 generate("dev");

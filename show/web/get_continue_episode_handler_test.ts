@@ -4,7 +4,7 @@ import {
   deleteWatchEpisodeSessionStatement,
   insertWatchEpisodeSessionStatement,
 } from "../../db/sql";
-import { GetContinueEpisodeHandler } from "./get_continue_episode";
+import { GetContinueEpisodeHandler } from "./get_continue_episode_handler";
 import { GET_CONTINUE_EPISODE_RESPONSE } from "@phading/play_activity_service_interface/show/web/interface";
 import { ExchangeSessionAndCheckCapabilityResponse } from "@phading/user_session_service_interface/node/interface";
 import { eqMessage } from "@selfage/message/test_matcher";
