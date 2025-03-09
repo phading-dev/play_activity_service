@@ -1,21 +1,23 @@
 import { SERVICE_CLIENT } from "../../common/service_client";
 import { SPANNER_DATABASE } from "../../common/spanner_database";
-import { listWatchEpisodeSessions } from "../../db/sql";
+import { listWatchSessions } from "../../db/sql";
+import { WATCH_TIME_TABLE, WatchTimeTable } from "../common/watch_time_table";
 import { Database } from "@google-cloud/spanner";
-import { EpisodeWatched } from "@phading/play_activity_service_interface/show/web/episode_watched";
-import { ListWatchedEpisodesHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
+import { ListWatchSessionsHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
 import {
-  ListWatchedEpisodesRequestBody,
-  ListWatchedEpisodesResponse,
+  ListWatchSessionsRequestBody,
+  ListWatchSessionsResponse,
 } from "@phading/play_activity_service_interface/show/web/interface";
+import { WatchSession } from "@phading/play_activity_service_interface/show/web/watch_session";
 import { newExchangeSessionAndCheckCapabilityRequest } from "@phading/user_session_service_interface/node/client";
 import { newBadRequestError, newUnauthorizedError } from "@selfage/http_error";
 import { NodeServiceClient } from "@selfage/node_service_client";
 
-export class ListWatchedEpisodesHandler extends ListWatchedEpisodesHandlerInterface {
-  public static create(): ListWatchedEpisodesHandler {
-    return new ListWatchedEpisodesHandler(
+export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface {
+  public static create(): ListWatchSessionsHandler {
+    return new ListWatchSessionsHandler(
       SPANNER_DATABASE,
+      WATCH_TIME_TABLE,
       SERVICE_CLIENT,
       () => Date.now(),
     );
@@ -23,6 +25,7 @@ export class ListWatchedEpisodesHandler extends ListWatchedEpisodesHandlerInterf
 
   public constructor(
     private database: Database,
+    private watchTimeTable: WatchTimeTable,
     private serviceClient: NodeServiceClient,
     private getNow: () => number,
   ) {
@@ -31,9 +34,9 @@ export class ListWatchedEpisodesHandler extends ListWatchedEpisodesHandlerInterf
 
   public async handle(
     loggingPrefix: string,
-    body: ListWatchedEpisodesRequestBody,
+    body: ListWatchSessionsRequestBody,
     sessionStr: string,
-  ): Promise<ListWatchedEpisodesResponse> {
+  ): Promise<ListWatchSessionsResponse> {
     if (!body.limit) {
       throw newBadRequestError(`"limit" is required.`);
     }
@@ -50,24 +53,30 @@ export class ListWatchedEpisodesHandler extends ListWatchedEpisodesHandlerInterf
         `Account ${accountId} is not allowed to list watched episodes.`,
       );
     }
-    let rows = await listWatchEpisodeSessions(
+    let rows = await listWatchSessions(
       this.database,
       accountId,
-      body.lastWatchedTimeCursor ?? this.getNow(),
+      body.createdTimeCursor ?? this.getNow(),
       body.limit,
     );
-    return {
-      episodes: rows.map(
-        (row): EpisodeWatched => ({
-          seasonId: row.watchEpisodeSessionData.seasonId,
-          episodeId: row.watchEpisodeSessionData.episodeId,
-          lastWatchedTimeMs: row.watchEpisodeSessionData.lastUpdatedTimeMs,
-          continueTimeMs: row.watchEpisodeSessionData.watchTimeMs,
+    let sessions = await Promise.all(
+      rows.map(
+        async (row): Promise<WatchSession> => ({
+          seasonId: row.watchSessionData.seasonId,
+          episodeId: row.watchSessionData.episodeId,
+          latestWatchedTimeMs: await this.watchTimeTable.getMs(
+            accountId,
+            row.watchSessionData.watchSessionId,
+          ),
+          createdTimeMs: row.watchSessionData.createdTimeMs,
         }),
       ),
-      lastWatchedTimeCursor:
+    );
+    return {
+      sessions,
+      createdTimeCursor:
         rows.length === body.limit
-          ? rows[rows.length - 1].watchEpisodeSessionData.lastUpdatedTimeMs
+          ? rows[rows.length - 1].watchSessionData.createdTimeMs
           : undefined,
     };
   }

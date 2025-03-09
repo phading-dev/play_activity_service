@@ -1,11 +1,13 @@
 import "../../local/env";
+import { BIGTABLE } from "../../common/bigtable_client";
 import { SPANNER_DATABASE } from "../../common/spanner_database";
 import {
-  deleteWatchEpisodeSessionStatement,
-  insertWatchEpisodeSessionStatement,
+  deleteWatchSessionStatement,
+  insertWatchSessionStatement,
 } from "../../db/sql";
-import { ListWatchedEpisodesHandler } from "./list_watched_episodes_handler";
-import { LIST_WATCHED_EPISODES_RESPONSE } from "@phading/play_activity_service_interface/show/web/interface";
+import { WATCH_TIME_TABLE } from "../common/watch_time_table";
+import { ListWatchSessionsHandler } from "./list_watch_sessions_handler";
+import { LIST_WATCH_SESSIONS_RESPONSE } from "@phading/play_activity_service_interface/show/web/interface";
 import { ExchangeSessionAndCheckCapabilityResponse } from "@phading/user_session_service_interface/node/interface";
 import { eqMessage } from "@selfage/message/test_matcher";
 import { NodeServiceClientMock } from "@selfage/node_service_client/client_mock";
@@ -13,7 +15,7 @@ import { assertThat } from "@selfage/test_matcher";
 import { TEST_RUNNER } from "@selfage/test_runner";
 
 TEST_RUNNER.run({
-  name: "ListWatchedEpisodesHandlerTest",
+  name: "ListWatchSessionsHandlerTest",
   cases: [
     {
       name: "ListOneBatch_ListAgainButNoMore",
@@ -21,33 +23,33 @@ TEST_RUNNER.run({
         // Prepare
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            insertWatchEpisodeSessionStatement({
-              watchSessionId: "watchSession1",
+            insertWatchSessionStatement({
               watcherId: "account1",
+              watchSessionId: "watchSession1",
               seasonId: "season1",
               episodeId: "episode1",
-              watchTimeMs: 1000,
-              lastUpdatedTimeMs: 10,
+              createdTimeMs: 100,
             }),
-            insertWatchEpisodeSessionStatement({
-              watchSessionId: "watchSession2",
+            insertWatchSessionStatement({
               watcherId: "account1",
+              watchSessionId: "watchSession2",
               seasonId: "season2",
               episodeId: "episode2",
-              watchTimeMs: 3000,
-              lastUpdatedTimeMs: 30,
+              createdTimeMs: 200,
             }),
-            insertWatchEpisodeSessionStatement({
-              watchSessionId: "watchSession3",
+            insertWatchSessionStatement({
               watcherId: "account1",
+              watchSessionId: "watchSession3",
               seasonId: "season1",
               episodeId: "episode1",
-              watchTimeMs: 2000,
-              lastUpdatedTimeMs: 20,
+              createdTimeMs: 300,
             }),
           ]);
           await transaction.commit();
         });
+        await WATCH_TIME_TABLE.set("account1", "watchSession1", 60);
+        await WATCH_TIME_TABLE.set("account1", "watchSession2", 120);
+        await WATCH_TIME_TABLE.set("account1", "watchSession3", 180);
         let serviceClientMock = new NodeServiceClientMock();
         serviceClientMock.response = {
           accountId: "account1",
@@ -55,8 +57,9 @@ TEST_RUNNER.run({
             canConsumeShows: true,
           },
         } as ExchangeSessionAndCheckCapabilityResponse;
-        let handler = new ListWatchedEpisodesHandler(
+        let handler = new ListWatchSessionsHandler(
           SPANNER_DATABASE,
+          WATCH_TIME_TABLE,
           serviceClientMock,
           () => 1000,
         );
@@ -70,23 +73,23 @@ TEST_RUNNER.run({
             response,
             eqMessage(
               {
-                episodes: [
-                  {
-                    seasonId: "season2",
-                    episodeId: "episode2",
-                    continueTimeMs: 3000,
-                    lastWatchedTimeMs: 30,
-                  },
+                sessions: [
                   {
                     seasonId: "season1",
                     episodeId: "episode1",
-                    continueTimeMs: 2000,
-                    lastWatchedTimeMs: 20,
+                    latestWatchedTimeMs: 180,
+                    createdTimeMs: 300,
+                  },
+                  {
+                    seasonId: "season2",
+                    episodeId: "episode2",
+                    latestWatchedTimeMs: 120,
+                    createdTimeMs: 200,
                   },
                 ],
-                lastWatchedTimeCursor: 20,
+                createdTimeCursor: 200,
               },
-              LIST_WATCHED_EPISODES_RESPONSE,
+              LIST_WATCH_SESSIONS_RESPONSE,
             ),
             "response 1",
           );
@@ -96,7 +99,7 @@ TEST_RUNNER.run({
           // Execute
           let response = await handler.handle(
             "",
-            { limit: 2, lastWatchedTimeCursor: 20 },
+            { limit: 2, createdTimeCursor: 200 },
             "session1",
           );
 
@@ -105,16 +108,16 @@ TEST_RUNNER.run({
             response,
             eqMessage(
               {
-                episodes: [
+                sessions: [
                   {
                     seasonId: "season1",
                     episodeId: "episode1",
-                    continueTimeMs: 1000,
-                    lastWatchedTimeMs: 10,
+                    latestWatchedTimeMs: 60,
+                    createdTimeMs: 100,
                   },
                 ],
               },
-              LIST_WATCHED_EPISODES_RESPONSE,
+              LIST_WATCH_SESSIONS_RESPONSE,
             ),
             "response 2",
           );
@@ -123,12 +126,13 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchEpisodeSessionStatement("watchSession1"),
-            deleteWatchEpisodeSessionStatement("watchSession2"),
-            deleteWatchEpisodeSessionStatement("watchSession3"),
+            deleteWatchSessionStatement("account1", "watchSession1"),
+            deleteWatchSessionStatement("account1", "watchSession2"),
+            deleteWatchSessionStatement("account1", "watchSession3"),
           ]);
           await transaction.commit();
         });
+        await BIGTABLE.deleteRows("w");
       },
     },
   ],

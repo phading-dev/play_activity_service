@@ -69,11 +69,9 @@ export class AddToWatchLaterListHandler extends AddToWatchLaterListHandlerInterf
         ]);
         await transaction.commit();
       } else {
-        let { watchLaterSeasonData } = rows[0];
-        watchLaterSeasonData.addedTimeMs = this.getNow();
-        await transaction.batchUpdate([
-          updateWatchLaterSeasonStatement(watchLaterSeasonData),
-        ]);
+        let data = rows[0].watchLaterSeasonData;
+        data.addedTimeMs = this.getNow();
+        await transaction.batchUpdate([updateWatchLaterSeasonStatement(data)]);
         await transaction.commit();
       }
     });

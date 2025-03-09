@@ -1,22 +1,21 @@
 import { PrimitiveType, MessageDescriptor } from '@selfage/message/descriptor';
 
-export interface WatchEpisodeSession {
-  watchSessionId?: string,
+export interface WatchSession {
   watcherId?: string,
+  watchSessionId?: string,
   seasonId?: string,
   episodeId?: string,
-  watchTimeMs?: number,
-  lastUpdatedTimeMs?: number,
+  createdTimeMs?: number,
 }
 
-export let WATCH_EPISODE_SESSION: MessageDescriptor<WatchEpisodeSession> = {
-  name: 'WatchEpisodeSession',
+export let WATCH_SESSION: MessageDescriptor<WatchSession> = {
+  name: 'WatchSession',
   fields: [{
-    name: 'watchSessionId',
+    name: 'watcherId',
     index: 1,
     primitiveType: PrimitiveType.STRING,
   }, {
-    name: 'watcherId',
+    name: 'watchSessionId',
     index: 2,
     primitiveType: PrimitiveType.STRING,
   }, {
@@ -28,11 +27,83 @@ export let WATCH_EPISODE_SESSION: MessageDescriptor<WatchEpisodeSession> = {
     index: 4,
     primitiveType: PrimitiveType.STRING,
   }, {
-    name: 'watchTimeMs',
+    name: 'createdTimeMs',
     index: 5,
     primitiveType: PrimitiveType.NUMBER,
+  }],
+};
+
+export interface WatchedSeason {
+  watcherId?: string,
+  seasonId?: string,
+  latestEpisodeId?: string,
+  latestEpisodeIndex?: number,
+  latestWatchSessionId?: string,
+  updatedTimeMs?: number,
+}
+
+export let WATCHED_SEASON: MessageDescriptor<WatchedSeason> = {
+  name: 'WatchedSeason',
+  fields: [{
+    name: 'watcherId',
+    index: 1,
+    primitiveType: PrimitiveType.STRING,
   }, {
-    name: 'lastUpdatedTimeMs',
+    name: 'seasonId',
+    index: 2,
+    primitiveType: PrimitiveType.STRING,
+  }, {
+    name: 'latestEpisodeId',
+    index: 3,
+    primitiveType: PrimitiveType.STRING,
+  }, {
+    name: 'latestEpisodeIndex',
+    index: 4,
+    primitiveType: PrimitiveType.NUMBER,
+  }, {
+    name: 'latestWatchSessionId',
+    index: 5,
+    primitiveType: PrimitiveType.STRING,
+  }, {
+    name: 'updatedTimeMs',
+    index: 6,
+    primitiveType: PrimitiveType.NUMBER,
+  }],
+};
+
+export interface WatchedEpisode {
+  watcherId?: string,
+  seasonId?: string,
+  episodeId?: string,
+  episodeIndex?: number,
+  latestWatchSessionId?: string,
+  updatedTimeMs?: number,
+}
+
+export let WATCHED_EPISODE: MessageDescriptor<WatchedEpisode> = {
+  name: 'WatchedEpisode',
+  fields: [{
+    name: 'watcherId',
+    index: 1,
+    primitiveType: PrimitiveType.STRING,
+  }, {
+    name: 'seasonId',
+    index: 2,
+    primitiveType: PrimitiveType.STRING,
+  }, {
+    name: 'episodeId',
+    index: 3,
+    primitiveType: PrimitiveType.STRING,
+  }, {
+    name: 'episodeIndex',
+    index: 4,
+    primitiveType: PrimitiveType.NUMBER,
+  }, {
+    name: 'latestWatchSessionId',
+    index: 5,
+    primitiveType: PrimitiveType.STRING,
+  }, {
+    name: 'updatedTimeMs',
     index: 6,
     primitiveType: PrimitiveType.NUMBER,
   }],

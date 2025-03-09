@@ -1,11 +1,12 @@
 import "../../local/env";
 import { SPANNER_DATABASE } from "../../common/spanner_database";
 import {
-  deleteWatchEpisodeSessionStatement,
-  insertWatchEpisodeSessionStatement,
+  deleteWatchedEpisodeStatement,
+  insertWatchedEpisodeStatement,
 } from "../../db/sql";
-import { GetContinueEpisodeHandler } from "./get_continue_episode_handler";
-import { GET_CONTINUE_EPISODE_RESPONSE } from "@phading/play_activity_service_interface/show/web/interface";
+import { WATCH_TIME_TABLE } from "../common/watch_time_table";
+import { GetLatestWatchedTimeOfEpisodeHandler } from "./get_latest_watched_time_of_episode_handler";
+import { GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE } from "@phading/play_activity_service_interface/show/web/interface";
 import { ExchangeSessionAndCheckCapabilityResponse } from "@phading/user_session_service_interface/node/interface";
 import { eqMessage } from "@selfage/message/test_matcher";
 import { NodeServiceClientMock } from "@selfage/node_service_client/client_mock";
@@ -13,49 +14,26 @@ import { assertThat } from "@selfage/test_matcher";
 import { TEST_RUNNER } from "@selfage/test_runner";
 
 TEST_RUNNER.run({
-  name: "GetContinueTimeForEpisodeHandlerTest",
+  name: "GetLatestWatchedTimeOfEpisodeHandlerTest",
   cases: [
     {
-      name: "GetLastWatchedEpisodeOfSeason",
+      name: "GetLastWatchedSessionOfEpisode",
       async execute() {
         // Prepare
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            insertWatchEpisodeSessionStatement({
-              watchSessionId: "watchSession1",
-              watcherId: "account1",
-              seasonId: "season1",
-              episodeId: "episode2",
-              watchTimeMs: 1000,
-              lastUpdatedTimeMs: 100,
-            }),
-            insertWatchEpisodeSessionStatement({
-              watchSessionId: "watchSession2",
+            insertWatchedEpisodeStatement({
               watcherId: "account1",
               seasonId: "season1",
               episodeId: "episode1",
-              watchTimeMs: 2000,
-              lastUpdatedTimeMs: 900,
-            }),
-            insertWatchEpisodeSessionStatement({
-              watchSessionId: "watchSession3",
-              watcherId: "account1",
-              seasonId: "season1",
-              episodeId: "episode3",
-              watchTimeMs: 3000,
-              lastUpdatedTimeMs: 0,
-            }),
-            insertWatchEpisodeSessionStatement({
-              watchSessionId: "watchSession4",
-              watcherId: "account1",
-              seasonId: "season1",
-              episodeId: "episode4",
-              watchTimeMs: 4000,
-              lastUpdatedTimeMs: 2000,
+              episodeIndex: 1,
+              latestWatchSessionId: "watchSession1",
+              updatedTimeMs: 100,
             }),
           ]);
           await transaction.commit();
         });
+        await WATCH_TIME_TABLE.set("account1", "watchSession1", 60);
         let serviceClientMock = new NodeServiceClientMock();
         serviceClientMock.response = {
           accountId: "account1",
@@ -63,16 +41,19 @@ TEST_RUNNER.run({
             canConsumeShows: true,
           },
         } as ExchangeSessionAndCheckCapabilityResponse;
-        let handler = new GetContinueEpisodeHandler(
+        let handler = new GetLatestWatchedTimeOfEpisodeHandler(
           SPANNER_DATABASE,
+          WATCH_TIME_TABLE,
           serviceClientMock,
-          () => 1000,
         );
 
         // Execute
         let response = await handler.handle(
           "",
-          { seasonId: "season1" },
+          {
+            seasonId: "season1",
+            episodeId: "episode1",
+          },
           "session1",
         );
 
@@ -81,10 +62,10 @@ TEST_RUNNER.run({
           response,
           eqMessage(
             {
-              episodeId: "episode1",
-              continueTimeMs: 2000,
+              episodeIndex: 1,
+              watchedTimeMs: 60,
             },
-            GET_CONTINUE_EPISODE_RESPONSE,
+            GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE,
           ),
           "response",
         );
@@ -92,10 +73,7 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchEpisodeSessionStatement("watchSession1"),
-            deleteWatchEpisodeSessionStatement("watchSession2"),
-            deleteWatchEpisodeSessionStatement("watchSession3"),
-            deleteWatchEpisodeSessionStatement("watchSession4"),
+            deleteWatchedEpisodeStatement("account1", "season1", "episode1"),
           ]);
           await transaction.commit();
         });
@@ -112,23 +90,26 @@ TEST_RUNNER.run({
             canConsumeShows: true,
           },
         } as ExchangeSessionAndCheckCapabilityResponse;
-        let handler = new GetContinueEpisodeHandler(
+        let handler = new GetLatestWatchedTimeOfEpisodeHandler(
           SPANNER_DATABASE,
+          WATCH_TIME_TABLE,
           serviceClientMock,
-          () => 1000,
         );
 
         // Execute
         let response = await handler.handle(
           "",
-          { seasonId: "season1" },
+          {
+            seasonId: "season1",
+            episodeId: "episode1",
+          },
           "session1",
         );
 
         // Verify
         assertThat(
           response,
-          eqMessage({}, GET_CONTINUE_EPISODE_RESPONSE),
+          eqMessage({}, GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE),
           "response",
         );
       },

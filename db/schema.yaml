@@ -1,10 +1,10 @@
 - kind: Message
-  name: WatchEpisodeSession
+  name: WatchSession
   fields:
-    - name: watchSessionId
+    - name: watcherId
       type: string
       index: 1
-    - name: watcherId
+    - name: watchSessionId
       type: string
       index: 2
     - name: seasonId
@@ -13,10 +13,49 @@
     - name: episodeId
       type: string
       index: 4
-    - name: watchTimeMs # timestamp of the video
+    - name: createdTimeMs
       type: number
       index: 5
-    - name: lastUpdatedTimeMs
+- kind: Message
+  name: WatchedSeason
+  fields:
+    - name: watcherId
+      type: string
+      index: 1
+    - name: seasonId
+      type: string
+      index: 2
+    - name: latestEpisodeId
+      type: string
+      index: 3
+    - name: latestEpisodeIndex
+      type: number
+      index: 4
+    - name: latestWatchSessionId
+      type: string
+      index: 5
+    - name: updatedTimeMs
+      type: number
+      index: 6
+- kind: Message
+  name: WatchedEpisode
+  fields:
+    - name: watcherId
+      type: string
+      index: 1
+    - name: seasonId
+      type: string
+      index: 2
+    - name: episodeId
+      type: string
+      index: 3
+    - name: episodeIndex
+      type: number
+      index: 4
+    - name: latestWatchSessionId
+      type: string
+      index: 5
+    - name: updatedTimeMs
       type: number
       index: 6
 - kind: Message
@@ -35,28 +74,61 @@
   name: PlayActivityDatabase
   tables:
     - kind: MessageTable
-      name: WatchEpisodeSession
+      name: WatchSession # Watch time is stored in BigTable.
       storedInColumn: data
       columns:
+        - watcherId
         - watchSessionId
+        - createdTimeMs
+      primaryKeys:
+        - watcherId
+        - watchSessionId
+      indexes:
+        - name: WatchSessionByCreatedTime
+          columns:
+            - watcherId
+            - name: createdTimeMs
+              desc: true
+      insert: InsertWatchSession
+      delete: DeleteWatchSession
+      get: GetWatchSession
+      update: UpdateWatchSession
+    - kind: MessageTable
+      name: WatchedSeason
+      storedInColumn: data
+      columns:
+        - watcherId
+        - seasonId
+        - updatedTimeMs
+      primaryKeys:
+        - watcherId
+        - seasonId
+      indexes:
+        - name: WatchedSeasonByUpdatedTime
+          columns:
+            - watcherId
+            - name: updatedTimeMs
+              desc: true
+      insert: InsertWatchedSeason
+      delete: DeleteWatchedSeason
+      get: GetWatchedSeason
+      update: UpdateWatchedSeason
+    - kind: MessageTable
+      name: WatchedEpisode
+      storedInColumn: data
+      columns:
         - watcherId
         - seasonId
         - episodeId
-        - lastUpdatedTimeMs
+        - updatedTimeMs
       primaryKeys:
-        - watchSessionId
-      indexes:
-        - name: WatchedByLastUpdatedTime
-          columns:
-            - watcherId
-            - name: lastUpdatedTimeMs
-              desc: true
-            - seasonId
-            - episodeId
-      insert: InsertWatchEpisodeSession
-      delete: DeleteWatchEpisodeSession
-      get: GetWatchEpisodeSession
-      update: UpdateWatchEpisodeSession
+        - watcherId
+        - seasonId
+        - episodeId
+      insert: InsertWatchedEpisode
+      delete: DeleteWatchedEpisode
+      get: GetWatchedEpisode
+      update: UpdateWatchedEpisode
     - kind: MessageTable
       name: WatchLaterSeason
       storedInColumn: data
@@ -78,53 +150,32 @@
       get: GetWatchLaterSeason
       update: UpdateWatchLaterSeason
   selects:
-    - name: ListWatchEpisodeSessions
-      table: WatchEpisodeSession
+    - name: ListWatchSessions
+      table: WatchSession
       where:
         op: AND
         exps:
           - op: =
             leftColumn: watcherId
           - op: <
-            leftColumn: lastUpdatedTimeMs
+            leftColumn: createdTimeMs
       orderBy:
-        - column: lastUpdatedTimeMs
+        - column: createdTimeMs
           desc: true
       withLimit: true
       getColumns:
         - data
-    - name: ListWatchEpisodeSessionsBySeason
-      table: WatchEpisodeSession
+    - name: ListWatchedSeasons
+      table: WatchedSeason
       where:
         op: AND
         exps:
           - op: =
             leftColumn: watcherId
-          - op: =
-            leftColumn: seasonId
           - op: <
-            leftColumn: lastUpdatedTimeMs
+            leftColumn: updatedTimeMs
       orderBy:
-        - column: lastUpdatedTimeMs
-          desc: true
-      withLimit: true
-      getColumns:
-        - data
-    - name: ListWatchEpisodeSessionsByEpisode
-      table: WatchEpisodeSession
-      where:
-        op: AND
-        exps:
-          - op: =
-            leftColumn: watcherId
-          - op: =
-            leftColumn: seasonId
-          - op: =
-            leftColumn: episodeId
-          - op: <
-            leftColumn: lastUpdatedTimeMs
-      orderBy:
-        - column: lastUpdatedTimeMs
+        - column: updatedTimeMs
           desc: true
       withLimit: true
       getColumns:

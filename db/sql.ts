@@ -1,137 +1,387 @@
 import { Statement } from '@google-cloud/spanner/build/src/transaction';
 import { Spanner, Database, Transaction } from '@google-cloud/spanner';
-import { WatchEpisodeSession, WATCH_EPISODE_SESSION, WatchLaterSeason, WATCH_LATER_SEASON } from './schema';
+import { WatchSession, WATCH_SESSION, WatchedSeason, WATCHED_SEASON, WatchedEpisode, WATCHED_EPISODE, WatchLaterSeason, WATCH_LATER_SEASON } from './schema';
 import { serializeMessage, deserializeMessage } from '@selfage/message/serializer';
 import { MessageDescriptor } from '@selfage/message/descriptor';
 
-export function insertWatchEpisodeSessionStatement(
-  data: WatchEpisodeSession,
+export function insertWatchSessionStatement(
+  data: WatchSession,
 ): Statement {
-  return insertWatchEpisodeSessionInternalStatement(
-    data.watchSessionId,
+  return insertWatchSessionInternalStatement(
     data.watcherId,
-    data.seasonId,
-    data.episodeId,
-    data.lastUpdatedTimeMs,
+    data.watchSessionId,
+    data.createdTimeMs,
     data
   );
 }
 
-export function insertWatchEpisodeSessionInternalStatement(
-  watchSessionId: string,
+export function insertWatchSessionInternalStatement(
   watcherId: string,
-  seasonId: string,
-  episodeId: string,
-  lastUpdatedTimeMs: number,
-  data: WatchEpisodeSession,
+  watchSessionId: string,
+  createdTimeMs: number,
+  data: WatchSession,
 ): Statement {
   return {
-    sql: "INSERT WatchEpisodeSession (watchSessionId, watcherId, seasonId, episodeId, lastUpdatedTimeMs, data) VALUES (@watchSessionId, @watcherId, @seasonId, @episodeId, @lastUpdatedTimeMs, @data)",
+    sql: "INSERT WatchSession (watcherId, watchSessionId, createdTimeMs, data) VALUES (@watcherId, @watchSessionId, @createdTimeMs, @data)",
     params: {
-      watchSessionId: watchSessionId,
       watcherId: watcherId,
-      seasonId: seasonId,
-      episodeId: episodeId,
-      lastUpdatedTimeMs: Spanner.float(lastUpdatedTimeMs),
-      data: Buffer.from(serializeMessage(data, WATCH_EPISODE_SESSION).buffer),
+      watchSessionId: watchSessionId,
+      createdTimeMs: Spanner.float(createdTimeMs),
+      data: Buffer.from(serializeMessage(data, WATCH_SESSION).buffer),
     },
     types: {
-      watchSessionId: { type: "string" },
       watcherId: { type: "string" },
-      seasonId: { type: "string" },
-      episodeId: { type: "string" },
-      lastUpdatedTimeMs: { type: "float64" },
+      watchSessionId: { type: "string" },
+      createdTimeMs: { type: "float64" },
       data: { type: "bytes" },
     }
   };
 }
 
-export function deleteWatchEpisodeSessionStatement(
-  watchEpisodeSessionWatchSessionIdEq: string,
+export function deleteWatchSessionStatement(
+  watchSessionWatcherIdEq: string,
+  watchSessionWatchSessionIdEq: string,
 ): Statement {
   return {
-    sql: "DELETE WatchEpisodeSession WHERE (WatchEpisodeSession.watchSessionId = @watchEpisodeSessionWatchSessionIdEq)",
+    sql: "DELETE WatchSession WHERE (WatchSession.watcherId = @watchSessionWatcherIdEq AND WatchSession.watchSessionId = @watchSessionWatchSessionIdEq)",
     params: {
-      watchEpisodeSessionWatchSessionIdEq: watchEpisodeSessionWatchSessionIdEq,
+      watchSessionWatcherIdEq: watchSessionWatcherIdEq,
+      watchSessionWatchSessionIdEq: watchSessionWatchSessionIdEq,
     },
     types: {
-      watchEpisodeSessionWatchSessionIdEq: { type: "string" },
+      watchSessionWatcherIdEq: { type: "string" },
+      watchSessionWatchSessionIdEq: { type: "string" },
     }
   };
 }
 
-export interface GetWatchEpisodeSessionRow {
-  watchEpisodeSessionData: WatchEpisodeSession,
+export interface GetWatchSessionRow {
+  watchSessionData: WatchSession,
 }
 
-export let GET_WATCH_EPISODE_SESSION_ROW: MessageDescriptor<GetWatchEpisodeSessionRow> = {
-  name: 'GetWatchEpisodeSessionRow',
+export let GET_WATCH_SESSION_ROW: MessageDescriptor<GetWatchSessionRow> = {
+  name: 'GetWatchSessionRow',
   fields: [{
-    name: 'watchEpisodeSessionData',
+    name: 'watchSessionData',
     index: 1,
-    messageType: WATCH_EPISODE_SESSION,
+    messageType: WATCH_SESSION,
   }],
 };
 
-export async function getWatchEpisodeSession(
+export async function getWatchSession(
   runner: Database | Transaction,
-  watchEpisodeSessionWatchSessionIdEq: string,
-): Promise<Array<GetWatchEpisodeSessionRow>> {
+  watchSessionWatcherIdEq: string,
+  watchSessionWatchSessionIdEq: string,
+): Promise<Array<GetWatchSessionRow>> {
   let [rows] = await runner.run({
-    sql: "SELECT WatchEpisodeSession.data FROM WatchEpisodeSession WHERE (WatchEpisodeSession.watchSessionId = @watchEpisodeSessionWatchSessionIdEq)",
+    sql: "SELECT WatchSession.data FROM WatchSession WHERE (WatchSession.watcherId = @watchSessionWatcherIdEq AND WatchSession.watchSessionId = @watchSessionWatchSessionIdEq)",
     params: {
-      watchEpisodeSessionWatchSessionIdEq: watchEpisodeSessionWatchSessionIdEq,
+      watchSessionWatcherIdEq: watchSessionWatcherIdEq,
+      watchSessionWatchSessionIdEq: watchSessionWatchSessionIdEq,
     },
     types: {
-      watchEpisodeSessionWatchSessionIdEq: { type: "string" },
+      watchSessionWatcherIdEq: { type: "string" },
+      watchSessionWatchSessionIdEq: { type: "string" },
     }
   });
-  let resRows = new Array<GetWatchEpisodeSessionRow>();
+  let resRows = new Array<GetWatchSessionRow>();
   for (let row of rows) {
     resRows.push({
-      watchEpisodeSessionData: deserializeMessage(row.at(0).value, WATCH_EPISODE_SESSION),
+      watchSessionData: deserializeMessage(row.at(0).value, WATCH_SESSION),
     });
   }
   return resRows;
 }
 
-export function updateWatchEpisodeSessionStatement(
-  data: WatchEpisodeSession,
+export function updateWatchSessionStatement(
+  data: WatchSession,
 ): Statement {
-  return updateWatchEpisodeSessionInternalStatement(
-    data.watchSessionId,
+  return updateWatchSessionInternalStatement(
     data.watcherId,
-    data.seasonId,
-    data.episodeId,
-    data.lastUpdatedTimeMs,
+    data.watchSessionId,
+    data.createdTimeMs,
     data
   );
 }
 
-export function updateWatchEpisodeSessionInternalStatement(
-  watchEpisodeSessionWatchSessionIdEq: string,
-  setWatcherId: string,
-  setSeasonId: string,
-  setEpisodeId: string,
-  setLastUpdatedTimeMs: number,
-  setData: WatchEpisodeSession,
+export function updateWatchSessionInternalStatement(
+  watchSessionWatcherIdEq: string,
+  watchSessionWatchSessionIdEq: string,
+  setCreatedTimeMs: number,
+  setData: WatchSession,
 ): Statement {
   return {
-    sql: "UPDATE WatchEpisodeSession SET watcherId = @setWatcherId, seasonId = @setSeasonId, episodeId = @setEpisodeId, lastUpdatedTimeMs = @setLastUpdatedTimeMs, data = @setData WHERE (WatchEpisodeSession.watchSessionId = @watchEpisodeSessionWatchSessionIdEq)",
+    sql: "UPDATE WatchSession SET createdTimeMs = @setCreatedTimeMs, data = @setData WHERE (WatchSession.watcherId = @watchSessionWatcherIdEq AND WatchSession.watchSessionId = @watchSessionWatchSessionIdEq)",
     params: {
-      watchEpisodeSessionWatchSessionIdEq: watchEpisodeSessionWatchSessionIdEq,
-      setWatcherId: setWatcherId,
-      setSeasonId: setSeasonId,
-      setEpisodeId: setEpisodeId,
-      setLastUpdatedTimeMs: Spanner.float(setLastUpdatedTimeMs),
-      setData: Buffer.from(serializeMessage(setData, WATCH_EPISODE_SESSION).buffer),
+      watchSessionWatcherIdEq: watchSessionWatcherIdEq,
+      watchSessionWatchSessionIdEq: watchSessionWatchSessionIdEq,
+      setCreatedTimeMs: Spanner.float(setCreatedTimeMs),
+      setData: Buffer.from(serializeMessage(setData, WATCH_SESSION).buffer),
     },
     types: {
-      watchEpisodeSessionWatchSessionIdEq: { type: "string" },
-      setWatcherId: { type: "string" },
-      setSeasonId: { type: "string" },
-      setEpisodeId: { type: "string" },
-      setLastUpdatedTimeMs: { type: "float64" },
+      watchSessionWatcherIdEq: { type: "string" },
+      watchSessionWatchSessionIdEq: { type: "string" },
+      setCreatedTimeMs: { type: "float64" },
+      setData: { type: "bytes" },
+    }
+  };
+}
+
+export function insertWatchedSeasonStatement(
+  data: WatchedSeason,
+): Statement {
+  return insertWatchedSeasonInternalStatement(
+    data.watcherId,
+    data.seasonId,
+    data.updatedTimeMs,
+    data
+  );
+}
+
+export function insertWatchedSeasonInternalStatement(
+  watcherId: string,
+  seasonId: string,
+  updatedTimeMs: number,
+  data: WatchedSeason,
+): Statement {
+  return {
+    sql: "INSERT WatchedSeason (watcherId, seasonId, updatedTimeMs, data) VALUES (@watcherId, @seasonId, @updatedTimeMs, @data)",
+    params: {
+      watcherId: watcherId,
+      seasonId: seasonId,
+      updatedTimeMs: Spanner.float(updatedTimeMs),
+      data: Buffer.from(serializeMessage(data, WATCHED_SEASON).buffer),
+    },
+    types: {
+      watcherId: { type: "string" },
+      seasonId: { type: "string" },
+      updatedTimeMs: { type: "float64" },
+      data: { type: "bytes" },
+    }
+  };
+}
+
+export function deleteWatchedSeasonStatement(
+  watchedSeasonWatcherIdEq: string,
+  watchedSeasonSeasonIdEq: string,
+): Statement {
+  return {
+    sql: "DELETE WatchedSeason WHERE (WatchedSeason.watcherId = @watchedSeasonWatcherIdEq AND WatchedSeason.seasonId = @watchedSeasonSeasonIdEq)",
+    params: {
+      watchedSeasonWatcherIdEq: watchedSeasonWatcherIdEq,
+      watchedSeasonSeasonIdEq: watchedSeasonSeasonIdEq,
+    },
+    types: {
+      watchedSeasonWatcherIdEq: { type: "string" },
+      watchedSeasonSeasonIdEq: { type: "string" },
+    }
+  };
+}
+
+export interface GetWatchedSeasonRow {
+  watchedSeasonData: WatchedSeason,
+}
+
+export let GET_WATCHED_SEASON_ROW: MessageDescriptor<GetWatchedSeasonRow> = {
+  name: 'GetWatchedSeasonRow',
+  fields: [{
+    name: 'watchedSeasonData',
+    index: 1,
+    messageType: WATCHED_SEASON,
+  }],
+};
+
+export async function getWatchedSeason(
+  runner: Database | Transaction,
+  watchedSeasonWatcherIdEq: string,
+  watchedSeasonSeasonIdEq: string,
+): Promise<Array<GetWatchedSeasonRow>> {
+  let [rows] = await runner.run({
+    sql: "SELECT WatchedSeason.data FROM WatchedSeason WHERE (WatchedSeason.watcherId = @watchedSeasonWatcherIdEq AND WatchedSeason.seasonId = @watchedSeasonSeasonIdEq)",
+    params: {
+      watchedSeasonWatcherIdEq: watchedSeasonWatcherIdEq,
+      watchedSeasonSeasonIdEq: watchedSeasonSeasonIdEq,
+    },
+    types: {
+      watchedSeasonWatcherIdEq: { type: "string" },
+      watchedSeasonSeasonIdEq: { type: "string" },
+    }
+  });
+  let resRows = new Array<GetWatchedSeasonRow>();
+  for (let row of rows) {
+    resRows.push({
+      watchedSeasonData: deserializeMessage(row.at(0).value, WATCHED_SEASON),
+    });
+  }
+  return resRows;
+}
+
+export function updateWatchedSeasonStatement(
+  data: WatchedSeason,
+): Statement {
+  return updateWatchedSeasonInternalStatement(
+    data.watcherId,
+    data.seasonId,
+    data.updatedTimeMs,
+    data
+  );
+}
+
+export function updateWatchedSeasonInternalStatement(
+  watchedSeasonWatcherIdEq: string,
+  watchedSeasonSeasonIdEq: string,
+  setUpdatedTimeMs: number,
+  setData: WatchedSeason,
+): Statement {
+  return {
+    sql: "UPDATE WatchedSeason SET updatedTimeMs = @setUpdatedTimeMs, data = @setData WHERE (WatchedSeason.watcherId = @watchedSeasonWatcherIdEq AND WatchedSeason.seasonId = @watchedSeasonSeasonIdEq)",
+    params: {
+      watchedSeasonWatcherIdEq: watchedSeasonWatcherIdEq,
+      watchedSeasonSeasonIdEq: watchedSeasonSeasonIdEq,
+      setUpdatedTimeMs: Spanner.float(setUpdatedTimeMs),
+      setData: Buffer.from(serializeMessage(setData, WATCHED_SEASON).buffer),
+    },
+    types: {
+      watchedSeasonWatcherIdEq: { type: "string" },
+      watchedSeasonSeasonIdEq: { type: "string" },
+      setUpdatedTimeMs: { type: "float64" },
+      setData: { type: "bytes" },
+    }
+  };
+}
+
+export function insertWatchedEpisodeStatement(
+  data: WatchedEpisode,
+): Statement {
+  return insertWatchedEpisodeInternalStatement(
+    data.watcherId,
+    data.seasonId,
+    data.episodeId,
+    data.updatedTimeMs,
+    data
+  );
+}
+
+export function insertWatchedEpisodeInternalStatement(
+  watcherId: string,
+  seasonId: string,
+  episodeId: string,
+  updatedTimeMs: number,
+  data: WatchedEpisode,
+): Statement {
+  return {
+    sql: "INSERT WatchedEpisode (watcherId, seasonId, episodeId, updatedTimeMs, data) VALUES (@watcherId, @seasonId, @episodeId, @updatedTimeMs, @data)",
+    params: {
+      watcherId: watcherId,
+      seasonId: seasonId,
+      episodeId: episodeId,
+      updatedTimeMs: Spanner.float(updatedTimeMs),
+      data: Buffer.from(serializeMessage(data, WATCHED_EPISODE).buffer),
+    },
+    types: {
+      watcherId: { type: "string" },
+      seasonId: { type: "string" },
+      episodeId: { type: "string" },
+      updatedTimeMs: { type: "float64" },
+      data: { type: "bytes" },
+    }
+  };
+}
+
+export function deleteWatchedEpisodeStatement(
+  watchedEpisodeWatcherIdEq: string,
+  watchedEpisodeSeasonIdEq: string,
+  watchedEpisodeEpisodeIdEq: string,
+): Statement {
+  return {
+    sql: "DELETE WatchedEpisode WHERE (WatchedEpisode.watcherId = @watchedEpisodeWatcherIdEq AND WatchedEpisode.seasonId = @watchedEpisodeSeasonIdEq AND WatchedEpisode.episodeId = @watchedEpisodeEpisodeIdEq)",
+    params: {
+      watchedEpisodeWatcherIdEq: watchedEpisodeWatcherIdEq,
+      watchedEpisodeSeasonIdEq: watchedEpisodeSeasonIdEq,
+      watchedEpisodeEpisodeIdEq: watchedEpisodeEpisodeIdEq,
+    },
+    types: {
+      watchedEpisodeWatcherIdEq: { type: "string" },
+      watchedEpisodeSeasonIdEq: { type: "string" },
+      watchedEpisodeEpisodeIdEq: { type: "string" },
+    }
+  };
+}
+
+export interface GetWatchedEpisodeRow {
+  watchedEpisodeData: WatchedEpisode,
+}
+
+export let GET_WATCHED_EPISODE_ROW: MessageDescriptor<GetWatchedEpisodeRow> = {
+  name: 'GetWatchedEpisodeRow',
+  fields: [{
+    name: 'watchedEpisodeData',
+    index: 1,
+    messageType: WATCHED_EPISODE,
+  }],
+};
+
+export async function getWatchedEpisode(
+  runner: Database | Transaction,
+  watchedEpisodeWatcherIdEq: string,
+  watchedEpisodeSeasonIdEq: string,
+  watchedEpisodeEpisodeIdEq: string,
+): Promise<Array<GetWatchedEpisodeRow>> {
+  let [rows] = await runner.run({
+    sql: "SELECT WatchedEpisode.data FROM WatchedEpisode WHERE (WatchedEpisode.watcherId = @watchedEpisodeWatcherIdEq AND WatchedEpisode.seasonId = @watchedEpisodeSeasonIdEq AND WatchedEpisode.episodeId = @watchedEpisodeEpisodeIdEq)",
+    params: {
+      watchedEpisodeWatcherIdEq: watchedEpisodeWatcherIdEq,
+      watchedEpisodeSeasonIdEq: watchedEpisodeSeasonIdEq,
+      watchedEpisodeEpisodeIdEq: watchedEpisodeEpisodeIdEq,
+    },
+    types: {
+      watchedEpisodeWatcherIdEq: { type: "string" },
+      watchedEpisodeSeasonIdEq: { type: "string" },
+      watchedEpisodeEpisodeIdEq: { type: "string" },
+    }
+  });
+  let resRows = new Array<GetWatchedEpisodeRow>();
+  for (let row of rows) {
+    resRows.push({
+      watchedEpisodeData: deserializeMessage(row.at(0).value, WATCHED_EPISODE),
+    });
+  }
+  return resRows;
+}
+
+export function updateWatchedEpisodeStatement(
+  data: WatchedEpisode,
+): Statement {
+  return updateWatchedEpisodeInternalStatement(
+    data.watcherId,
+    data.seasonId,
+    data.episodeId,
+    data.updatedTimeMs,
+    data
+  );
+}
+
+export function updateWatchedEpisodeInternalStatement(
+  watchedEpisodeWatcherIdEq: string,
+  watchedEpisodeSeasonIdEq: string,
+  watchedEpisodeEpisodeIdEq: string,
+  setUpdatedTimeMs: number,
+  setData: WatchedEpisode,
+): Statement {
+  return {
+    sql: "UPDATE WatchedEpisode SET updatedTimeMs = @setUpdatedTimeMs, data = @setData WHERE (WatchedEpisode.watcherId = @watchedEpisodeWatcherIdEq AND WatchedEpisode.seasonId = @watchedEpisodeSeasonIdEq AND WatchedEpisode.episodeId = @watchedEpisodeEpisodeIdEq)",
+    params: {
+      watchedEpisodeWatcherIdEq: watchedEpisodeWatcherIdEq,
+      watchedEpisodeSeasonIdEq: watchedEpisodeSeasonIdEq,
+      watchedEpisodeEpisodeIdEq: watchedEpisodeEpisodeIdEq,
+      setUpdatedTimeMs: Spanner.float(setUpdatedTimeMs),
+      setData: Buffer.from(serializeMessage(setData, WATCHED_EPISODE).buffer),
+    },
+    types: {
+      watchedEpisodeWatcherIdEq: { type: "string" },
+      watchedEpisodeSeasonIdEq: { type: "string" },
+      watchedEpisodeEpisodeIdEq: { type: "string" },
+      setUpdatedTimeMs: { type: "float64" },
       setData: { type: "bytes" },
     }
   };
@@ -260,133 +510,83 @@ export function updateWatchLaterSeasonInternalStatement(
   };
 }
 
-export interface ListWatchEpisodeSessionsRow {
-  watchEpisodeSessionData: WatchEpisodeSession,
+export interface ListWatchSessionsRow {
+  watchSessionData: WatchSession,
 }
 
-export let LIST_WATCH_EPISODE_SESSIONS_ROW: MessageDescriptor<ListWatchEpisodeSessionsRow> = {
-  name: 'ListWatchEpisodeSessionsRow',
+export let LIST_WATCH_SESSIONS_ROW: MessageDescriptor<ListWatchSessionsRow> = {
+  name: 'ListWatchSessionsRow',
   fields: [{
-    name: 'watchEpisodeSessionData',
+    name: 'watchSessionData',
     index: 1,
-    messageType: WATCH_EPISODE_SESSION,
+    messageType: WATCH_SESSION,
   }],
 };
 
-export async function listWatchEpisodeSessions(
+export async function listWatchSessions(
   runner: Database | Transaction,
-  watchEpisodeSessionWatcherIdEq: string,
-  watchEpisodeSessionLastUpdatedTimeMsLt: number,
+  watchSessionWatcherIdEq: string,
+  watchSessionCreatedTimeMsLt: number,
   limit: number,
-): Promise<Array<ListWatchEpisodeSessionsRow>> {
+): Promise<Array<ListWatchSessionsRow>> {
   let [rows] = await runner.run({
-    sql: "SELECT WatchEpisodeSession.data FROM WatchEpisodeSession WHERE (WatchEpisodeSession.watcherId = @watchEpisodeSessionWatcherIdEq AND WatchEpisodeSession.lastUpdatedTimeMs < @watchEpisodeSessionLastUpdatedTimeMsLt) ORDER BY WatchEpisodeSession.lastUpdatedTimeMs DESC LIMIT @limit",
+    sql: "SELECT WatchSession.data FROM WatchSession WHERE (WatchSession.watcherId = @watchSessionWatcherIdEq AND WatchSession.createdTimeMs < @watchSessionCreatedTimeMsLt) ORDER BY WatchSession.createdTimeMs DESC LIMIT @limit",
     params: {
-      watchEpisodeSessionWatcherIdEq: watchEpisodeSessionWatcherIdEq,
-      watchEpisodeSessionLastUpdatedTimeMsLt: Spanner.float(watchEpisodeSessionLastUpdatedTimeMsLt),
+      watchSessionWatcherIdEq: watchSessionWatcherIdEq,
+      watchSessionCreatedTimeMsLt: Spanner.float(watchSessionCreatedTimeMsLt),
       limit: limit.toString(),
     },
     types: {
-      watchEpisodeSessionWatcherIdEq: { type: "string" },
-      watchEpisodeSessionLastUpdatedTimeMsLt: { type: "float64" },
+      watchSessionWatcherIdEq: { type: "string" },
+      watchSessionCreatedTimeMsLt: { type: "float64" },
       limit: { type: "int64" },
     }
   });
-  let resRows = new Array<ListWatchEpisodeSessionsRow>();
+  let resRows = new Array<ListWatchSessionsRow>();
   for (let row of rows) {
     resRows.push({
-      watchEpisodeSessionData: deserializeMessage(row.at(0).value, WATCH_EPISODE_SESSION),
+      watchSessionData: deserializeMessage(row.at(0).value, WATCH_SESSION),
     });
   }
   return resRows;
 }
 
-export interface ListWatchEpisodeSessionsBySeasonRow {
-  watchEpisodeSessionData: WatchEpisodeSession,
+export interface ListWatchedSeasonsRow {
+  watchedSeasonData: WatchedSeason,
 }
 
-export let LIST_WATCH_EPISODE_SESSIONS_BY_SEASON_ROW: MessageDescriptor<ListWatchEpisodeSessionsBySeasonRow> = {
-  name: 'ListWatchEpisodeSessionsBySeasonRow',
+export let LIST_WATCHED_SEASONS_ROW: MessageDescriptor<ListWatchedSeasonsRow> = {
+  name: 'ListWatchedSeasonsRow',
   fields: [{
-    name: 'watchEpisodeSessionData',
+    name: 'watchedSeasonData',
     index: 1,
-    messageType: WATCH_EPISODE_SESSION,
+    messageType: WATCHED_SEASON,
   }],
 };
 
-export async function listWatchEpisodeSessionsBySeason(
+export async function listWatchedSeasons(
   runner: Database | Transaction,
-  watchEpisodeSessionWatcherIdEq: string,
-  watchEpisodeSessionSeasonIdEq: string,
-  watchEpisodeSessionLastUpdatedTimeMsLt: number,
+  watchedSeasonWatcherIdEq: string,
+  watchedSeasonUpdatedTimeMsLt: number,
   limit: number,
-): Promise<Array<ListWatchEpisodeSessionsBySeasonRow>> {
+): Promise<Array<ListWatchedSeasonsRow>> {
   let [rows] = await runner.run({
-    sql: "SELECT WatchEpisodeSession.data FROM WatchEpisodeSession WHERE (WatchEpisodeSession.watcherId = @watchEpisodeSessionWatcherIdEq AND WatchEpisodeSession.seasonId = @watchEpisodeSessionSeasonIdEq AND WatchEpisodeSession.lastUpdatedTimeMs < @watchEpisodeSessionLastUpdatedTimeMsLt) ORDER BY WatchEpisodeSession.lastUpdatedTimeMs DESC LIMIT @limit",
+    sql: "SELECT WatchedSeason.data FROM WatchedSeason WHERE (WatchedSeason.watcherId = @watchedSeasonWatcherIdEq AND WatchedSeason.updatedTimeMs < @watchedSeasonUpdatedTimeMsLt) ORDER BY WatchedSeason.updatedTimeMs DESC LIMIT @limit",
     params: {
-      watchEpisodeSessionWatcherIdEq: watchEpisodeSessionWatcherIdEq,
-      watchEpisodeSessionSeasonIdEq: watchEpisodeSessionSeasonIdEq,
-      watchEpisodeSessionLastUpdatedTimeMsLt: Spanner.float(watchEpisodeSessionLastUpdatedTimeMsLt),
+      watchedSeasonWatcherIdEq: watchedSeasonWatcherIdEq,
+      watchedSeasonUpdatedTimeMsLt: Spanner.float(watchedSeasonUpdatedTimeMsLt),
       limit: limit.toString(),
     },
     types: {
-      watchEpisodeSessionWatcherIdEq: { type: "string" },
-      watchEpisodeSessionSeasonIdEq: { type: "string" },
-      watchEpisodeSessionLastUpdatedTimeMsLt: { type: "float64" },
+      watchedSeasonWatcherIdEq: { type: "string" },
+      watchedSeasonUpdatedTimeMsLt: { type: "float64" },
       limit: { type: "int64" },
     }
   });
-  let resRows = new Array<ListWatchEpisodeSessionsBySeasonRow>();
+  let resRows = new Array<ListWatchedSeasonsRow>();
   for (let row of rows) {
     resRows.push({
-      watchEpisodeSessionData: deserializeMessage(row.at(0).value, WATCH_EPISODE_SESSION),
-    });
-  }
-  return resRows;
-}
-
-export interface ListWatchEpisodeSessionsByEpisodeRow {
-  watchEpisodeSessionData: WatchEpisodeSession,
-}
-
-export let LIST_WATCH_EPISODE_SESSIONS_BY_EPISODE_ROW: MessageDescriptor<ListWatchEpisodeSessionsByEpisodeRow> = {
-  name: 'ListWatchEpisodeSessionsByEpisodeRow',
-  fields: [{
-    name: 'watchEpisodeSessionData',
-    index: 1,
-    messageType: WATCH_EPISODE_SESSION,
-  }],
-};
-
-export async function listWatchEpisodeSessionsByEpisode(
-  runner: Database | Transaction,
-  watchEpisodeSessionWatcherIdEq: string,
-  watchEpisodeSessionSeasonIdEq: string,
-  watchEpisodeSessionEpisodeIdEq: string,
-  watchEpisodeSessionLastUpdatedTimeMsLt: number,
-  limit: number,
-): Promise<Array<ListWatchEpisodeSessionsByEpisodeRow>> {
-  let [rows] = await runner.run({
-    sql: "SELECT WatchEpisodeSession.data FROM WatchEpisodeSession WHERE (WatchEpisodeSession.watcherId = @watchEpisodeSessionWatcherIdEq AND WatchEpisodeSession.seasonId = @watchEpisodeSessionSeasonIdEq AND WatchEpisodeSession.episodeId = @watchEpisodeSessionEpisodeIdEq AND WatchEpisodeSession.lastUpdatedTimeMs < @watchEpisodeSessionLastUpdatedTimeMsLt) ORDER BY WatchEpisodeSession.lastUpdatedTimeMs DESC LIMIT @limit",
-    params: {
-      watchEpisodeSessionWatcherIdEq: watchEpisodeSessionWatcherIdEq,
-      watchEpisodeSessionSeasonIdEq: watchEpisodeSessionSeasonIdEq,
-      watchEpisodeSessionEpisodeIdEq: watchEpisodeSessionEpisodeIdEq,
-      watchEpisodeSessionLastUpdatedTimeMsLt: Spanner.float(watchEpisodeSessionLastUpdatedTimeMsLt),
-      limit: limit.toString(),
-    },
-    types: {
-      watchEpisodeSessionWatcherIdEq: { type: "string" },
-      watchEpisodeSessionSeasonIdEq: { type: "string" },
-      watchEpisodeSessionEpisodeIdEq: { type: "string" },
-      watchEpisodeSessionLastUpdatedTimeMsLt: { type: "float64" },
-      limit: { type: "int64" },
-    }
-  });
-  let resRows = new Array<ListWatchEpisodeSessionsByEpisodeRow>();
-  for (let row of rows) {
-    resRows.push({
-      watchEpisodeSessionData: deserializeMessage(row.at(0).value, WATCH_EPISODE_SESSION),
+      watchedSeasonData: deserializeMessage(row.at(0).value, WATCHED_SEASON),
     });
   }
   return resRows;

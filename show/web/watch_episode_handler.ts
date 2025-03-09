@@ -2,10 +2,15 @@ import crypto = require("crypto");
 import { SERVICE_CLIENT } from "../../common/service_client";
 import { SPANNER_DATABASE } from "../../common/spanner_database";
 import {
-  getWatchEpisodeSession,
-  insertWatchEpisodeSessionStatement,
-  updateWatchEpisodeSessionStatement,
+  getWatchedEpisode,
+  getWatchedSeason,
+  insertWatchSessionStatement,
+  insertWatchedEpisodeStatement,
+  insertWatchedSeasonStatement,
+  updateWatchedEpisodeStatement,
+  updateWatchedSeasonStatement,
 } from "../../db/sql";
+import { WATCH_TIME_TABLE, WatchTimeTable } from "../common/watch_time_table";
 import { Database } from "@google-cloud/spanner";
 import { WatchEpisodeHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
 import {
@@ -13,17 +18,14 @@ import {
   WatchEpisodeResponse,
 } from "@phading/play_activity_service_interface/show/web/interface";
 import { newExchangeSessionAndCheckCapabilityRequest } from "@phading/user_session_service_interface/node/client";
-import {
-  newBadRequestError,
-  newNotFoundError,
-  newUnauthorizedError,
-} from "@selfage/http_error";
+import { newBadRequestError, newUnauthorizedError } from "@selfage/http_error";
 import { NodeServiceClient } from "@selfage/node_service_client";
 
 export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
   public static create(): WatchEpisodeHandler {
     return new WatchEpisodeHandler(
       SPANNER_DATABASE,
+      WATCH_TIME_TABLE,
       SERVICE_CLIENT,
       () => crypto.randomUUID(),
       () => Date.now(),
@@ -32,6 +34,7 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
 
   public constructor(
     private database: Database,
+    private watchTimeTable: WatchTimeTable,
     private serviceClient: NodeServiceClient,
     private generateUuid: () => string,
     private getNow: () => number,
@@ -67,42 +70,69 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
       );
     }
     let watchSessionId = body.watchSessionId;
-    await this.database.runTransactionAsync(async (transaction) => {
-      if (!watchSessionId) {
-        watchSessionId = this.generateUuid();
-        await transaction.batchUpdate([
-          insertWatchEpisodeSessionStatement({
-            watchSessionId,
+    if (!watchSessionId) {
+      watchSessionId = this.generateUuid();
+      await this.database.runTransactionAsync(async (transaction) => {
+        let [seasonRows, episodeRows] = await Promise.all([
+          getWatchedSeason(transaction, accountId, body.seasonId),
+          getWatchedEpisode(
+            transaction,
+            accountId,
+            body.seasonId,
+            body.episodeId,
+          ),
+        ]);
+        let now = this.getNow();
+        let statements = [
+          insertWatchSessionStatement({
             watcherId: accountId,
+            watchSessionId,
             seasonId: body.seasonId,
             episodeId: body.episodeId,
-            watchTimeMs: body.watchTimeMs,
-            lastUpdatedTimeMs: this.getNow(),
+            createdTimeMs: now,
           }),
-        ]);
-        await transaction.commit();
-      } else {
-        let rows = await getWatchEpisodeSession(transaction, watchSessionId);
-        if (rows.length === 0) {
-          throw newNotFoundError(`Watch session ${watchSessionId} not found.`);
-        }
-        let { watchEpisodeSessionData } = rows[0];
-        if (
-          watchEpisodeSessionData.seasonId !== body.seasonId ||
-          watchEpisodeSessionData.episodeId !== body.episodeId
-        ) {
-          throw newNotFoundError(
-            `Watch session ${watchSessionId} does not match season ${body.seasonId} or episode ${body.episodeId}.`,
+        ];
+        if (seasonRows.length === 0) {
+          statements.push(
+            insertWatchedSeasonStatement({
+              watcherId: accountId,
+              seasonId: body.seasonId,
+              latestEpisodeId: body.episodeId,
+              latestEpisodeIndex: body.episodeIndex,
+              latestWatchSessionId: watchSessionId,
+              updatedTimeMs: now,
+            }),
           );
+        } else {
+          let data = seasonRows[0].watchedSeasonData;
+          data.latestEpisodeId = body.episodeId;
+          data.latestEpisodeIndex = body.episodeIndex;
+          data.latestWatchSessionId = watchSessionId;
+          data.updatedTimeMs = now;
+          statements.push(updateWatchedSeasonStatement(data));
         }
-        watchEpisodeSessionData.watchTimeMs = body.watchTimeMs;
-        watchEpisodeSessionData.lastUpdatedTimeMs = this.getNow();
-        await transaction.batchUpdate([
-          updateWatchEpisodeSessionStatement(watchEpisodeSessionData),
-        ]);
+        if (episodeRows.length === 0) {
+          statements.push(
+            insertWatchedEpisodeStatement({
+              watcherId: accountId,
+              seasonId: body.seasonId,
+              episodeId: body.episodeId,
+              episodeIndex: body.episodeIndex,
+              latestWatchSessionId: watchSessionId,
+              updatedTimeMs: now,
+            }),
+          );
+        } else {
+          let data = episodeRows[0].watchedEpisodeData;
+          data.latestWatchSessionId = watchSessionId;
+          data.updatedTimeMs = now;
+          statements.push(updateWatchedEpisodeStatement(data));
+        }
+        await transaction.batchUpdate(statements);
         await transaction.commit();
-      }
-    });
+      });
+    }
+    await this.watchTimeTable.set(accountId, watchSessionId, body.watchTimeMs);
     return {
       watchSessionId,
     };

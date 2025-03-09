@@ -1,38 +1,44 @@
 import { SERVICE_CLIENT } from "../../common/service_client";
 import { SPANNER_DATABASE } from "../../common/spanner_database";
-import { listWatchEpisodeSessionsBySeason } from "../../db/sql";
+import { getWatchedEpisode } from "../../db/sql";
+import { WATCH_TIME_TABLE, WatchTimeTable } from "../common/watch_time_table";
 import { Database } from "@google-cloud/spanner";
-import { GetContinueEpisodeHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
+import { GetLatestWatchedTimeOfEpisodeHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
 import {
-  GetContinueEpisodeRequestBody,
-  GetContinueEpisodeResponse,
+  GetLatestWatchedTimeOfEpisodeRequestBody,
+  GetLatestWatchedTimeOfEpisodeResponse,
 } from "@phading/play_activity_service_interface/show/web/interface";
 import { newExchangeSessionAndCheckCapabilityRequest } from "@phading/user_session_service_interface/node/client";
 import { newBadRequestError, newUnauthorizedError } from "@selfage/http_error";
 import { NodeServiceClient } from "@selfage/node_service_client";
 
-export class GetContinueEpisodeHandler extends GetContinueEpisodeHandlerInterface {
-  public static create(): GetContinueEpisodeHandler {
-    return new GetContinueEpisodeHandler(SPANNER_DATABASE, SERVICE_CLIENT, () =>
-      Date.now(),
+export class GetLatestWatchedTimeOfEpisodeHandler extends GetLatestWatchedTimeOfEpisodeHandlerInterface {
+  public static create(): GetLatestWatchedTimeOfEpisodeHandler {
+    return new GetLatestWatchedTimeOfEpisodeHandler(
+      SPANNER_DATABASE,
+      WATCH_TIME_TABLE,
+      SERVICE_CLIENT,
     );
   }
 
   public constructor(
     private database: Database,
+    private watchTimeTable: WatchTimeTable,
     private serviceClient: NodeServiceClient,
-    private getNow: () => number,
   ) {
     super();
   }
 
   public async handle(
     loggingPrefix: string,
-    body: GetContinueEpisodeRequestBody,
+    body: GetLatestWatchedTimeOfEpisodeRequestBody,
     sessionStr: string,
-  ): Promise<GetContinueEpisodeResponse> {
+  ): Promise<GetLatestWatchedTimeOfEpisodeResponse> {
     if (!body.seasonId) {
       throw newBadRequestError(`"seasonId" is required.`);
+    }
+    if (!body.episodeId) {
+      throw newBadRequestError(`"episodeId" is required.`);
     }
     let { accountId, capabilities } = await this.serviceClient.send(
       newExchangeSessionAndCheckCapabilityRequest({
@@ -44,24 +50,26 @@ export class GetContinueEpisodeHandler extends GetContinueEpisodeHandlerInterfac
     );
     if (!capabilities.canConsumeShows) {
       throw newUnauthorizedError(
-        `Account ${accountId} is not allowed to get continue episode.`,
+        `Account ${accountId} is not allowed to get latest watched time of episode.`,
       );
     }
-    let rows = await listWatchEpisodeSessionsBySeason(
+    let rows = await getWatchedEpisode(
       this.database,
       accountId,
       body.seasonId,
-      this.getNow(),
-      1,
+      body.episodeId,
     );
     if (rows.length === 0) {
       // No records.
       return {};
     } else {
-      let { watchEpisodeSessionData } = rows[0];
+      let data = rows[0].watchedEpisodeData;
       return {
-        episodeId: watchEpisodeSessionData.episodeId,
-        continueTimeMs: watchEpisodeSessionData.watchTimeMs,
+        episodeIndex: data.episodeIndex,
+        watchedTimeMs: await this.watchTimeTable.getMs(
+          accountId,
+          data.latestWatchSessionId,
+        ),
       };
     }
   }
