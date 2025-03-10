@@ -34,7 +34,7 @@
     "@google-cloud/spanner": "^7.18.1",
     "@phading/cluster": "^1.0.1",
     "@phading/constants": "^0.3.7",
-    "@phading/play_activity_service_interface": "^1.0.3",
+    "@phading/play_activity_service_interface": "^1.0.4",
     "@phading/user_session_service_interface": "^1.0.4",
     "@selfage/http_error": "^1.1.2",
     "@selfage/message": "^3.5.6",

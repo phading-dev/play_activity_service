@@ -19,7 +19,7 @@ export class WatchTimeTable {
   ): Promise<void> {
     await this.bigtable.insert([
       {
-        key: `${WatchTimeTable.TABLE_PREFIX}:${watcherId}:${watchSessionId}`,
+        key: `${WatchTimeTable.TABLE_PREFIX}#${watcherId}#${watchSessionId}`,
         data: {
           [WatchTimeTable.COLUMN_FAMILY]: {
             [WatchTimeTable.COLUMN_QUALIFIER]: {
@@ -36,7 +36,7 @@ export class WatchTimeTable {
     watchSessionId: string,
   ): Promise<number> {
     let [row] = await this.bigtable
-      .row(`${WatchTimeTable.TABLE_PREFIX}:${watcherId}:${watchSessionId}`)
+      .row(`${WatchTimeTable.TABLE_PREFIX}#${watcherId}#${watchSessionId}`)
       .get({
         filter: {
           column: {
