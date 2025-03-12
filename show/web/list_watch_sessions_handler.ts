@@ -9,7 +9,7 @@ import {
   ListWatchSessionsResponse,
 } from "@phading/play_activity_service_interface/show/web/interface";
 import { WatchSession } from "@phading/play_activity_service_interface/show/web/watch_session";
-import { newExchangeSessionAndCheckCapabilityRequest } from "@phading/user_session_service_interface/node/client";
+import { newFetchSessionAndCheckCapabilityRequest } from "@phading/user_session_service_interface/node/client";
 import { newBadRequestError, newUnauthorizedError } from "@selfage/http_error";
 import { NodeServiceClient } from "@selfage/node_service_client";
 
@@ -41,14 +41,14 @@ export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface 
       throw newBadRequestError(`"limit" is required.`);
     }
     let { accountId, capabilities } = await this.serviceClient.send(
-      newExchangeSessionAndCheckCapabilityRequest({
+      newFetchSessionAndCheckCapabilityRequest({
         signedSession: sessionStr,
         capabilitiesMask: {
-          checkCanConsumeShows: true,
+          checkCanConsume: true,
         },
       }),
     );
-    if (!capabilities.canConsumeShows) {
+    if (!capabilities.canConsume) {
       throw newUnauthorizedError(
         `Account ${accountId} is not allowed to list watched episodes.`,
       );

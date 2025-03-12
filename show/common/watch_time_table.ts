@@ -35,18 +35,22 @@ export class WatchTimeTable {
     watcherId: string,
     watchSessionId: string,
   ): Promise<number> {
-    let [row] = await this.bigtable
-      .row(`${WatchTimeTable.TABLE_PREFIX}#${watcherId}#${watchSessionId}`)
-      .get({
-        filter: {
-          column: {
-            cellLimit: 1,
-          },
+    let [rows] = await this.bigtable.getRows({
+      keys: [`${WatchTimeTable.TABLE_PREFIX}#${watcherId}#${watchSessionId}`],
+      filter: {
+        column: {
+          cellLimit: 1,
         },
-      });
-    return row.data[WatchTimeTable.COLUMN_FAMILY][
-      WatchTimeTable.COLUMN_QUALIFIER
-    ][0].value;
+      },
+    });
+    if (rows.length === 0) {
+      return 0;
+    } else {
+      let row = rows[0];
+      return row.data[WatchTimeTable.COLUMN_FAMILY][
+        WatchTimeTable.COLUMN_QUALIFIER
+      ][0].value;
+    }
   }
 }
 

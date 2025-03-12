@@ -6,7 +6,7 @@ import {
   insertWatchLaterSeasonStatement,
 } from "../../db/sql";
 import { DeleteFromWatchLaterListHandler } from "./delete_from_watch_later_list_handler";
-import { ExchangeSessionAndCheckCapabilityResponse } from "@phading/user_session_service_interface/node/interface";
+import { FetchSessionAndCheckCapabilityResponse } from "@phading/user_session_service_interface/node/interface";
 import { NodeServiceClientMock } from "@selfage/node_service_client/client_mock";
 import { assertThat, isArray } from "@selfage/test_matcher";
 import { TEST_RUNNER } from "@selfage/test_runner";
@@ -32,9 +32,9 @@ TEST_RUNNER.run({
         serviceClientMock.response = {
           accountId: "account1",
           capabilities: {
-            canConsumeShows: true,
+            canConsume: true,
           },
-        } as ExchangeSessionAndCheckCapabilityResponse;
+        } as FetchSessionAndCheckCapabilityResponse;
         let handler = new DeleteFromWatchLaterListHandler(
           SPANNER_DATABASE,
           serviceClientMock,
@@ -67,9 +67,9 @@ TEST_RUNNER.run({
         serviceClientMock.response = {
           accountId: "account1",
           capabilities: {
-            canConsumeShows: true,
+            canConsume: true,
           },
-        } as ExchangeSessionAndCheckCapabilityResponse;
+        } as FetchSessionAndCheckCapabilityResponse;
         let handler = new DeleteFromWatchLaterListHandler(
           SPANNER_DATABASE,
           serviceClientMock,

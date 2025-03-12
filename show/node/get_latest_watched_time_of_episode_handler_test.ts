@@ -1,4 +1,5 @@
 import "../../local/env";
+import { BIGTABLE } from "../../common/bigtable_client";
 import { SPANNER_DATABASE } from "../../common/spanner_database";
 import {
   deleteWatchedEpisodeStatement,
@@ -51,6 +52,58 @@ TEST_RUNNER.run({
             {
               episodeIndex: 1,
               watchedTimeMs: 60,
+            },
+            GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE,
+          ),
+          "response",
+        );
+      },
+      async tearDown() {
+        await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
+          await transaction.batchUpdate([
+            deleteWatchedEpisodeStatement("account1", "season1", "episode1"),
+          ]);
+          await transaction.commit();
+        });
+        await BIGTABLE.deleteRows("w");
+      },
+    },
+    {
+      name: "NoWatchTime",
+      async execute() {
+        // Prepare
+        await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
+          await transaction.batchUpdate([
+            insertWatchedEpisodeStatement({
+              watcherId: "account1",
+              seasonId: "season1",
+              episodeId: "episode1",
+              episodeIndex: 1,
+              latestWatchSessionId: "watchSession1",
+              updatedTimeMs: 100,
+            }),
+          ]);
+          await transaction.commit();
+        });
+        let handler = new GetLatestWatchedTimeOfEpisodeHandler(
+          SPANNER_DATABASE,
+          WATCH_TIME_TABLE,
+        );
+
+        // Execute
+        let response = await handler.handle("", {
+          watcherId: "account1",
+          seasonId: "season1",
+          episodeId: "episode1",
+        });
+
+        // Verify
+        assertThat(
+          response,
+          eqMessage(
+            {
+              episodeIndex: 1,
+              watchedTimeMs: 0,
             },
             GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE,
           ),
