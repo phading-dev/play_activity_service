@@ -54,11 +54,10 @@ export class AddToWatchLaterListHandler extends AddToWatchLaterListHandlerInterf
       );
     }
     await this.database.runTransactionAsync(async (transaction) => {
-      let rows = await getWatchLaterSeason(
-        transaction,
-        accountId,
-        body.seasonId,
-      );
+      let rows = await getWatchLaterSeason(transaction, {
+        watchLaterSeasonWatcherIdEq: accountId,
+        watchLaterSeasonSeasonIdEq: body.seasonId,
+      });
       if (rows.length === 0) {
         await transaction.batchUpdate([
           insertWatchLaterSeasonStatement({
@@ -69,9 +68,13 @@ export class AddToWatchLaterListHandler extends AddToWatchLaterListHandlerInterf
         ]);
         await transaction.commit();
       } else {
-        let data = rows[0].watchLaterSeasonData;
-        data.addedTimeMs = this.getNow();
-        await transaction.batchUpdate([updateWatchLaterSeasonStatement(data)]);
+        await transaction.batchUpdate([
+          updateWatchLaterSeasonStatement({
+            watchLaterSeasonWatcherIdEq: accountId,
+            watchLaterSeasonSeasonIdEq: body.seasonId,
+            setAddedTimeMs: this.getNow(),
+          }),
+        ]);
         await transaction.commit();
       }
     });

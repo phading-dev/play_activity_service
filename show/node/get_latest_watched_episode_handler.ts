@@ -27,22 +27,21 @@ export class GetLatestWatchedEpisodeHandler extends GetLatestWatchedEpisodeHandl
     loggingPrefix: string,
     body: GetLatestWatchedEpisodeRequestBody,
   ): Promise<GetLatestWatchedEpisodeResponse> {
-    let rows = await getWatchedSeason(
-      this.database,
-      body.watcherId,
-      body.seasonId,
-    );
+    let rows = await getWatchedSeason(this.database, {
+      watchedSeasonWatcherIdEq: body.watcherId,
+      watchedSeasonSeasonIdEq: body.seasonId,
+    });
     if (rows.length === 0) {
       // No records.
       return {};
     } else {
       let season = rows[0];
       return {
-        episodeId: season.watchedSeasonData.latestEpisodeId,
-        episodeIndex: season.watchedSeasonData.latestEpisodeIndex,
+        episodeId: season.watchedSeasonLatestEpisodeId,
+        episodeIndex: season.watchedSeasonLatestEpisodeIndex,
         watchedTimeMs: await this.watchTimeTable.getMs(
           body.watcherId,
-          season.watchedSeasonData.latestWatchSessionId,
+          season.watchedSeasonLatestWatchSessionId,
         ),
       };
     }

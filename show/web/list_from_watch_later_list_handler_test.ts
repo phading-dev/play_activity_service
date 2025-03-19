@@ -94,9 +94,18 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchLaterSeasonStatement("account1", "season1"),
-            deleteWatchLaterSeasonStatement("account1", "season2"),
-            deleteWatchLaterSeasonStatement("account1", "season3"),
+            deleteWatchLaterSeasonStatement({
+              watchLaterSeasonWatcherIdEq: "account1",
+              watchLaterSeasonSeasonIdEq: "season1",
+            }),
+            deleteWatchLaterSeasonStatement({
+              watchLaterSeasonWatcherIdEq: "account1",
+              watchLaterSeasonSeasonIdEq: "season2",
+            }),
+            deleteWatchLaterSeasonStatement({
+              watchLaterSeasonWatcherIdEq: "account1",
+              watchLaterSeasonSeasonIdEq: "season3",
+            }),
           ]);
           await transaction.commit();
         });

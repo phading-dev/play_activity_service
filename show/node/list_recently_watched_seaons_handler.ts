@@ -30,21 +30,20 @@ export class ListRecentlyWatchedSeasonsHandler extends ListRecentlyWatchedSeason
     loggingPrefix: string,
     body: ListRecentlyWatchedSeasonsRequestBody,
   ): Promise<ListRecentlyWatchedSeasonsResponse> {
-    let seasonRows = await listWatchedSeasons(
-      this.database,
-      body.watcherId,
-      this.getNow(),
-      body.limit,
-    );
+    let seasonRows = await listWatchedSeasons(this.database, {
+      watchedSeasonWatcherIdEq: body.watcherId,
+      watchedSeasonUpdatedTimeMsLt: this.getNow(),
+      limit: body.limit,
+    });
     let seasons = await Promise.all(
       seasonRows.map(
         async (row): Promise<WatchedSeason> => ({
-          seasonId: row.watchedSeasonData.seasonId,
-          latestEpisodeId: row.watchedSeasonData.latestEpisodeId,
-          latestEpisodeIndex: row.watchedSeasonData.latestEpisodeIndex,
+          seasonId: row.watchedSeasonSeasonId,
+          latestEpisodeId: row.watchedSeasonLatestEpisodeId,
+          latestEpisodeIndex: row.watchedSeasonLatestEpisodeIndex,
           latestWatchedTimeMs: await this.watchTimeTable.getMs(
             body.watcherId,
-            row.watchedSeasonData.latestWatchSessionId,
+            row.watchedSeasonLatestWatchSessionId,
           ),
         }),
       ),

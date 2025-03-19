@@ -126,9 +126,18 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchSessionStatement("account1", "watchSession1"),
-            deleteWatchSessionStatement("account1", "watchSession2"),
-            deleteWatchSessionStatement("account1", "watchSession3"),
+            deleteWatchSessionStatement({
+              watchSessionWatcherIdEq: "account1",
+              watchSessionWatchSessionIdEq: "watchSession1",
+            }),
+            deleteWatchSessionStatement({
+              watchSessionWatcherIdEq: "account1",
+              watchSessionWatchSessionIdEq: "watchSession2",
+            }),
+            deleteWatchSessionStatement({
+              watchSessionWatcherIdEq: "account1",
+              watchSessionWatchSessionIdEq: "watchSession3",
+            }),
           ]);
           await transaction.commit();
         });

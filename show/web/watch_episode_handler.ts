@@ -74,13 +74,15 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
       watchSessionId = this.generateUuid();
       await this.database.runTransactionAsync(async (transaction) => {
         let [seasonRows, episodeRows] = await Promise.all([
-          getWatchedSeason(transaction, accountId, body.seasonId),
-          getWatchedEpisode(
-            transaction,
-            accountId,
-            body.seasonId,
-            body.episodeId,
-          ),
+          getWatchedSeason(transaction, {
+            watchedSeasonWatcherIdEq: accountId,
+            watchedSeasonSeasonIdEq: body.seasonId,
+          }),
+          getWatchedEpisode(transaction, {
+            watchedEpisodeWatcherIdEq: accountId,
+            watchedEpisodeSeasonIdEq: body.seasonId,
+            watchedEpisodeEpisodeIdEq: body.episodeId,
+          }),
         ]);
         let now = this.getNow();
         let statements = [
@@ -104,12 +106,16 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
             }),
           );
         } else {
-          let data = seasonRows[0].watchedSeasonData;
-          data.latestEpisodeId = body.episodeId;
-          data.latestEpisodeIndex = body.episodeIndex;
-          data.latestWatchSessionId = watchSessionId;
-          data.updatedTimeMs = now;
-          statements.push(updateWatchedSeasonStatement(data));
+          statements.push(
+            updateWatchedSeasonStatement({
+              watchedSeasonWatcherIdEq: accountId,
+              watchedSeasonSeasonIdEq: body.seasonId,
+              setLatestEpisodeId: body.episodeId,
+              setLatestEpisodeIndex: body.episodeIndex,
+              setLatestWatchSessionId: watchSessionId,
+              setUpdatedTimeMs: now,
+            }),
+          );
         }
         if (episodeRows.length === 0) {
           statements.push(
@@ -123,10 +129,16 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
             }),
           );
         } else {
-          let data = episodeRows[0].watchedEpisodeData;
-          data.latestWatchSessionId = watchSessionId;
-          data.updatedTimeMs = now;
-          statements.push(updateWatchedEpisodeStatement(data));
+          statements.push(
+            updateWatchedEpisodeStatement({
+              watchedEpisodeWatcherIdEq: accountId,
+              watchedEpisodeSeasonIdEq: body.seasonId,
+              watchedEpisodeEpisodeIdEq: body.episodeId,
+              setEpisodeIndex: body.episodeIndex,
+              setLatestWatchSessionId: watchSessionId,
+              setUpdatedTimeMs: now,
+            }),
+          );
         }
         await transaction.batchUpdate(statements);
         await transaction.commit();

@@ -75,17 +75,18 @@ TEST_RUNNER.run({
           "WatchTime",
         );
         assertThat(
-          await getWatchSession(SPANNER_DATABASE, "account1", "uuid1"),
+          await getWatchSession(SPANNER_DATABASE, {
+            watchSessionWatcherIdEq: "account1",
+            watchSessionWatchSessionIdEq: "uuid1",
+          }),
           isArray([
             eqMessage(
               {
-                watchSessionData: {
-                  watcherId: "account1",
-                  seasonId: "season1",
-                  episodeId: "episode1",
-                  watchSessionId: "uuid1",
-                  createdTimeMs: 1000,
-                },
+                watchSessionWatcherId: "account1",
+                watchSessionSeasonId: "season1",
+                watchSessionEpisodeId: "episode1",
+                watchSessionWatchSessionId: "uuid1",
+                watchSessionCreatedTimeMs: 1000,
               },
               GET_WATCH_SESSION_ROW,
             ),
@@ -93,18 +94,19 @@ TEST_RUNNER.run({
           "WatchSession",
         );
         assertThat(
-          await getWatchedSeason(SPANNER_DATABASE, "account1", "season1"),
+          await getWatchedSeason(SPANNER_DATABASE, {
+            watchedSeasonWatcherIdEq: "account1",
+            watchedSeasonSeasonIdEq: "season1",
+          }),
           isArray([
             eqMessage(
               {
-                watchedSeasonData: {
-                  watcherId: "account1",
-                  seasonId: "season1",
-                  latestEpisodeId: "episode1",
-                  latestWatchSessionId: "uuid1",
-                  latestEpisodeIndex: 1,
-                  updatedTimeMs: 1000,
-                },
+                watchedSeasonWatcherId: "account1",
+                watchedSeasonSeasonId: "season1",
+                watchedSeasonLatestEpisodeId: "episode1",
+                watchedSeasonLatestWatchSessionId: "uuid1",
+                watchedSeasonLatestEpisodeIndex: 1,
+                watchedSeasonUpdatedTimeMs: 1000,
               },
               GET_WATCHED_SEASON_ROW,
             ),
@@ -112,23 +114,20 @@ TEST_RUNNER.run({
           "WatchedSeason",
         );
         assertThat(
-          await getWatchedEpisode(
-            SPANNER_DATABASE,
-            "account1",
-            "season1",
-            "episode1",
-          ),
+          await getWatchedEpisode(SPANNER_DATABASE, {
+            watchedEpisodeWatcherIdEq: "account1",
+            watchedEpisodeSeasonIdEq: "season1",
+            watchedEpisodeEpisodeIdEq: "episode1",
+          }),
           isArray([
             eqMessage(
               {
-                watchedEpisodeData: {
-                  watcherId: "account1",
-                  seasonId: "season1",
-                  episodeId: "episode1",
-                  episodeIndex: 1,
-                  latestWatchSessionId: "uuid1",
-                  updatedTimeMs: 1000,
-                },
+                watchedEpisodeWatcherId: "account1",
+                watchedEpisodeSeasonId: "season1",
+                watchedEpisodeEpisodeId: "episode1",
+                watchedEpisodeEpisodeIndex: 1,
+                watchedEpisodeLatestWatchSessionId: "uuid1",
+                watchedEpisodeUpdatedTimeMs: 1000,
               },
               GET_WATCHED_EPISODE_ROW,
             ),
@@ -139,9 +138,19 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchSessionStatement("account1", "uuid1"),
-            deleteWatchedSeasonStatement("account1", "season1"),
-            deleteWatchedEpisodeStatement("account1", "season1", "episode1"),
+            deleteWatchSessionStatement({
+              watchSessionWatcherIdEq: "account1",
+              watchSessionWatchSessionIdEq: "uuid1",
+            }),
+            deleteWatchedSeasonStatement({
+              watchedSeasonWatcherIdEq: "account1",
+              watchedSeasonSeasonIdEq: "season1",
+            }),
+            deleteWatchedEpisodeStatement({
+              watchedEpisodeWatcherIdEq: "account1",
+              watchedEpisodeSeasonIdEq: "season1",
+              watchedEpisodeEpisodeIdEq: "episode1",
+            }),
           ]);
           await transaction.commit();
         });
@@ -217,17 +226,18 @@ TEST_RUNNER.run({
           "WatchTime",
         );
         assertThat(
-          await getWatchSession(SPANNER_DATABASE, "account1", "uuid1"),
+          await getWatchSession(SPANNER_DATABASE, {
+            watchSessionWatcherIdEq: "account1",
+            watchSessionWatchSessionIdEq: "uuid1",
+          }),
           isArray([
             eqMessage(
               {
-                watchSessionData: {
-                  watcherId: "account1",
-                  seasonId: "season1",
-                  episodeId: "episode1",
-                  watchSessionId: "uuid1",
-                  createdTimeMs: 1000,
-                },
+                watchSessionWatcherId: "account1",
+                watchSessionSeasonId: "season1",
+                watchSessionEpisodeId: "episode1",
+                watchSessionWatchSessionId: "uuid1",
+                watchSessionCreatedTimeMs: 1000,
               },
               GET_WATCH_SESSION_ROW,
             ),
@@ -235,18 +245,19 @@ TEST_RUNNER.run({
           "WatchSession",
         );
         assertThat(
-          await getWatchedSeason(SPANNER_DATABASE, "account1", "season1"),
+          await getWatchedSeason(SPANNER_DATABASE, {
+            watchedSeasonWatcherIdEq: "account1",
+            watchedSeasonSeasonIdEq: "season1",
+          }),
           isArray([
             eqMessage(
               {
-                watchedSeasonData: {
-                  watcherId: "account1",
-                  seasonId: "season1",
-                  latestEpisodeId: "episode1",
-                  latestWatchSessionId: "uuid1",
-                  latestEpisodeIndex: 1,
-                  updatedTimeMs: 1000,
-                },
+                watchedSeasonWatcherId: "account1",
+                watchedSeasonSeasonId: "season1",
+                watchedSeasonLatestEpisodeId: "episode1",
+                watchedSeasonLatestWatchSessionId: "uuid1",
+                watchedSeasonLatestEpisodeIndex: 1,
+                watchedSeasonUpdatedTimeMs: 1000,
               },
               GET_WATCHED_SEASON_ROW,
             ),
@@ -254,23 +265,20 @@ TEST_RUNNER.run({
           "WatchedSeason",
         );
         assertThat(
-          await getWatchedEpisode(
-            SPANNER_DATABASE,
-            "account1",
-            "season1",
-            "episode1",
-          ),
+          await getWatchedEpisode(SPANNER_DATABASE, {
+            watchedEpisodeWatcherIdEq: "account1",
+            watchedEpisodeSeasonIdEq: "season1",
+            watchedEpisodeEpisodeIdEq: "episode1",
+          }),
           isArray([
             eqMessage(
               {
-                watchedEpisodeData: {
-                  watcherId: "account1",
-                  seasonId: "season1",
-                  episodeId: "episode1",
-                  episodeIndex: 1,
-                  latestWatchSessionId: "uuid1",
-                  updatedTimeMs: 1000,
-                },
+                watchedEpisodeWatcherId: "account1",
+                watchedEpisodeSeasonId: "season1",
+                watchedEpisodeEpisodeId: "episode1",
+                watchedEpisodeEpisodeIndex: 1,
+                watchedEpisodeLatestWatchSessionId: "uuid1",
+                watchedEpisodeUpdatedTimeMs: 1000,
               },
               GET_WATCHED_EPISODE_ROW,
             ),
@@ -281,9 +289,19 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchSessionStatement("account1", "uuid1"),
-            deleteWatchedSeasonStatement("account1", "season1"),
-            deleteWatchedEpisodeStatement("account1", "season1", "episode1"),
+            deleteWatchSessionStatement({
+              watchSessionWatcherIdEq: "account1",
+              watchSessionWatchSessionIdEq: "uuid1",
+            }),
+            deleteWatchedSeasonStatement({
+              watchedSeasonWatcherIdEq: "account1",
+              watchedSeasonSeasonIdEq: "season1",
+            }),
+            deleteWatchedEpisodeStatement({
+              watchedEpisodeWatcherIdEq: "account1",
+              watchedEpisodeSeasonIdEq: "season1",
+              watchedEpisodeEpisodeIdEq: "episode1",
+            }),
           ]);
           await transaction.commit();
         });
@@ -350,17 +368,18 @@ TEST_RUNNER.run({
           "WatchTime",
         );
         assertThat(
-          await getWatchSession(SPANNER_DATABASE, "account1", "watchSession1"),
+          await getWatchSession(SPANNER_DATABASE, {
+            watchSessionWatcherIdEq: "account1",
+            watchSessionWatchSessionIdEq: "watchSession1",
+          }),
           isArray([
             eqMessage(
               {
-                watchSessionData: {
-                  watcherId: "account1",
-                  seasonId: "season1",
-                  episodeId: "episode1",
-                  watchSessionId: "watchSession1",
-                  createdTimeMs: 100,
-                },
+                watchSessionWatcherId: "account1",
+                watchSessionSeasonId: "season1",
+                watchSessionEpisodeId: "episode1",
+                watchSessionWatchSessionId: "watchSession1",
+                watchSessionCreatedTimeMs: 100,
               },
               GET_WATCH_SESSION_ROW,
             ),
@@ -371,7 +390,10 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchSessionStatement("account1", "watchSession1"),
+            deleteWatchSessionStatement({
+              watchSessionWatcherIdEq: "account1",
+              watchSessionWatchSessionIdEq: "watchSession1",
+            }),
           ]);
           await transaction.commit();
         });

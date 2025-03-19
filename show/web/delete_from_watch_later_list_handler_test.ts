@@ -23,7 +23,6 @@ TEST_RUNNER.run({
             insertWatchLaterSeasonStatement({
               watcherId: "account1",
               seasonId: "season1",
-              addedTimeMs: 10,
             }),
           ]);
           await transaction.commit();
@@ -45,7 +44,10 @@ TEST_RUNNER.run({
 
         // Verify
         assertThat(
-          await getWatchLaterSeason(SPANNER_DATABASE, "account1", "season1"),
+          await getWatchLaterSeason(SPANNER_DATABASE, {
+            watchLaterSeasonWatcherIdEq: "account1",
+            watchLaterSeasonSeasonIdEq: "season1",
+          }),
           isArray([]),
           "WatchLaterSeason",
         );
@@ -53,7 +55,10 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchLaterSeasonStatement("account1", "season1"),
+            deleteWatchLaterSeasonStatement({
+              watchLaterSeasonWatcherIdEq: "account1",
+              watchLaterSeasonSeasonIdEq: "season1",
+            }),
           ]);
           await transaction.commit();
         });
@@ -80,14 +85,7 @@ TEST_RUNNER.run({
 
         // Verify no error
       },
-      async tearDown() {
-        await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
-          await transaction.batchUpdate([
-            deleteWatchLaterSeasonStatement("account1", "season1"),
-          ]);
-          await transaction.commit();
-        });
-      },
+      async tearDown() {},
     },
   ],
 });

@@ -27,7 +27,6 @@ TEST_RUNNER.run({
               episodeId: "episode1",
               episodeIndex: 1,
               latestWatchSessionId: "watchSession1",
-              updatedTimeMs: 100,
             }),
           ]);
           await transaction.commit();
@@ -61,7 +60,11 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchedEpisodeStatement("account1", "season1", "episode1"),
+            deleteWatchedEpisodeStatement({
+              watchedEpisodeWatcherIdEq: "account1",
+              watchedEpisodeSeasonIdEq: "season1",
+              watchedEpisodeEpisodeIdEq: "episode1",
+            }),
           ]);
           await transaction.commit();
         });
@@ -80,7 +83,6 @@ TEST_RUNNER.run({
               episodeId: "episode1",
               episodeIndex: 1,
               latestWatchSessionId: "watchSession1",
-              updatedTimeMs: 100,
             }),
           ]);
           await transaction.commit();
@@ -113,7 +115,11 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchedEpisodeStatement("account1", "season1", "episode1"),
+            deleteWatchedEpisodeStatement({
+              watchedEpisodeWatcherIdEq: "account1",
+              watchedEpisodeSeasonIdEq: "season1",
+              watchedEpisodeEpisodeIdEq: "episode1",
+            }),
           ]);
           await transaction.commit();
         });

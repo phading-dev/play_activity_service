@@ -1,85 +1,22 @@
-- kind: Message
-  name: WatchSession
-  fields:
-    - name: watcherId
-      type: string
-      index: 1
-    - name: watchSessionId
-      type: string
-      index: 2
-    - name: seasonId
-      type: string
-      index: 3
-    - name: episodeId
-      type: string
-      index: 4
-    - name: createdTimeMs
-      type: number
-      index: 5
-- kind: Message
-  name: WatchedSeason
-  fields:
-    - name: watcherId
-      type: string
-      index: 1
-    - name: seasonId
-      type: string
-      index: 2
-    - name: latestEpisodeId
-      type: string
-      index: 3
-    - name: latestEpisodeIndex
-      type: number
-      index: 4
-    - name: latestWatchSessionId
-      type: string
-      index: 5
-    - name: updatedTimeMs
-      type: number
-      index: 6
-- kind: Message
-  name: WatchedEpisode
-  fields:
-    - name: watcherId
-      type: string
-      index: 1
-    - name: seasonId
-      type: string
-      index: 2
-    - name: episodeId
-      type: string
-      index: 3
-    - name: episodeIndex
-      type: number
-      index: 4
-    - name: latestWatchSessionId
-      type: string
-      index: 5
-    - name: updatedTimeMs
-      type: number
-      index: 6
-- kind: Message
-  name: WatchLaterSeason
-  fields:
-    - name: watcherId
-      type: string
-      index: 1
-    - name: seasonId
-      type: string
-      index: 2
-    - name: addedTimeMs
-      type: number
-      index: 3
 - kind: SpannerDatabase
   name: PlayActivityDatabase
   tables:
-    - kind: MessageTable
+    - kind: Table
       name: WatchSession # Watch time is stored in BigTable.
-      storedInColumn: data
       columns:
-        - watcherId
-        - watchSessionId
-        - createdTimeMs
+        - name: watcherId
+          type: string
+        - name: watchSessionId
+          type: string
+        - name: seasonId
+          type: string
+          nullable: true
+        - name: episodeId
+          type: string
+          nullable: true
+        - name: createdTimeMs
+          type: float64
+          nullable: true
       primaryKeys:
         - watcherId
         - watchSessionId
@@ -92,14 +29,25 @@
       insert: InsertWatchSession
       delete: DeleteWatchSession
       get: GetWatchSession
-      update: UpdateWatchSession
-    - kind: MessageTable
+    - kind: Table
       name: WatchedSeason
-      storedInColumn: data
       columns:
-        - watcherId
-        - seasonId
-        - updatedTimeMs
+        - name: watcherId
+          type: string
+        - name: seasonId
+          type: string
+        - name: latestEpisodeId
+          type: string
+          nullable: true
+        - name: latestEpisodeIndex
+          type: float64
+          nullable: true
+        - name: latestWatchSessionId
+          type: string
+          nullable: true
+        - name: updatedTimeMs
+          type: float64
+          nullable: true
       primaryKeys:
         - watcherId
         - seasonId
@@ -113,14 +61,24 @@
       delete: DeleteWatchedSeason
       get: GetWatchedSeason
       update: UpdateWatchedSeason
-    - kind: MessageTable
+    - kind: Table
       name: WatchedEpisode
-      storedInColumn: data
       columns:
-        - watcherId
-        - seasonId
-        - episodeId
-        - updatedTimeMs
+        - name: watcherId
+          type: string
+        - name: seasonId
+          type: string
+        - name: episodeId
+          type: string
+        - name: episodeIndex
+          type: float64
+          nullable: true
+        - name: latestWatchSessionId
+          type: string
+          nullable: true
+        - name: updatedTimeMs
+          type: float64
+          nullable: true
       primaryKeys:
         - watcherId
         - seasonId
@@ -129,13 +87,16 @@
       delete: DeleteWatchedEpisode
       get: GetWatchedEpisode
       update: UpdateWatchedEpisode
-    - kind: MessageTable
+    - kind: Table
       name: WatchLaterSeason
-      storedInColumn: data
       columns:
-        - watcherId
-        - seasonId
-        - addedTimeMs
+        - name: watcherId
+          type: string
+        - name: seasonId
+          type: string
+        - name: addedTimeMs
+          type: float64
+          nullable: true
       primaryKeys:
         - watcherId
         - seasonId
@@ -151,49 +112,49 @@
       update: UpdateWatchLaterSeason
   selects:
     - name: ListWatchSessions
-      table: WatchSession
+      from: WatchSession
       where:
         op: AND
-        exps:
+        exprs:
           - op: =
-            leftColumn: watcherId
+            lColumn: watcherId
           - op: <
-            leftColumn: createdTimeMs
+            lColumn: createdTimeMs
       orderBy:
         - column: createdTimeMs
           desc: true
       withLimit: true
-      getColumns:
-        - data
+      get:
+        - all: true
     - name: ListWatchedSeasons
-      table: WatchedSeason
+      from: WatchedSeason
       where:
         op: AND
-        exps:
+        exprs:
           - op: =
-            leftColumn: watcherId
+            lColumn: watcherId
           - op: <
-            leftColumn: updatedTimeMs
+            lColumn: updatedTimeMs
       orderBy:
         - column: updatedTimeMs
           desc: true
       withLimit: true
-      getColumns:
-        - data
+      get:
+        - all: true
     - name: ListWatchLaterSeasons
-      table: WatchLaterSeason
+      from: WatchLaterSeason
       where:
         op: AND
-        exps:
+        exprs:
           - op: =
-            leftColumn: watcherId
+            lColumn: watcherId
           - op: <
-            leftColumn: addedTimeMs
+            lColumn: addedTimeMs
       orderBy:
         - column: addedTimeMs
           desc: true
       withLimit: true
-      getColumns:
-        - data
+      get:
+        - all: true
   outputDdl: ./db/ddl
   outputSql: ./db/sql

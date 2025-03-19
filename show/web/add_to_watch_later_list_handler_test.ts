@@ -38,15 +38,16 @@ TEST_RUNNER.run({
 
         // Verify
         assertThat(
-          await getWatchLaterSeason(SPANNER_DATABASE, "account1", "season1"),
+          await getWatchLaterSeason(SPANNER_DATABASE, {
+            watchLaterSeasonWatcherIdEq: "account1",
+            watchLaterSeasonSeasonIdEq: "season1",
+          }),
           isArray([
             eqMessage(
               {
-                watchLaterSeasonData: {
-                  watcherId: "account1",
-                  seasonId: "season1",
-                  addedTimeMs: 1000,
-                },
+                watchLaterSeasonWatcherId: "account1",
+                watchLaterSeasonSeasonId: "season1",
+                watchLaterSeasonAddedTimeMs: 1000,
               },
               GET_WATCH_LATER_SEASON_ROW,
             ),
@@ -57,7 +58,10 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchLaterSeasonStatement("account1", "season1"),
+            deleteWatchLaterSeasonStatement({
+              watchLaterSeasonWatcherIdEq: "account1",
+              watchLaterSeasonSeasonIdEq: "season1",
+            }),
           ]);
           await transaction.commit();
         });
@@ -95,15 +99,16 @@ TEST_RUNNER.run({
 
         // Verify
         assertThat(
-          await getWatchLaterSeason(SPANNER_DATABASE, "account1", "season1"),
+          await getWatchLaterSeason(SPANNER_DATABASE, {
+            watchLaterSeasonWatcherIdEq: "account1",
+            watchLaterSeasonSeasonIdEq: "season1",
+          }),
           isArray([
             eqMessage(
               {
-                watchLaterSeasonData: {
-                  watcherId: "account1",
-                  seasonId: "season1",
-                  addedTimeMs: 1000,
-                },
+                watchLaterSeasonWatcherId: "account1",
+                watchLaterSeasonSeasonId: "season1",
+                watchLaterSeasonAddedTimeMs: 1000,
               },
               GET_WATCH_LATER_SEASON_ROW,
             ),
@@ -114,7 +119,10 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchLaterSeasonStatement("account1", "season1"),
+            deleteWatchLaterSeasonStatement({
+              watchLaterSeasonWatcherIdEq: "account1",
+              watchLaterSeasonSeasonIdEq: "season1",
+            }),
           ]);
           await transaction.commit();
         });

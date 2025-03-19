@@ -53,22 +53,21 @@ export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface 
         `Account ${accountId} is not allowed to list watched episodes.`,
       );
     }
-    let rows = await listWatchSessions(
-      this.database,
-      accountId,
-      body.createdTimeCursor ?? this.getNow(),
-      body.limit,
-    );
+    let rows = await listWatchSessions(this.database, {
+      watchSessionWatcherIdEq: accountId,
+      watchSessionCreatedTimeMsLt: body.createdTimeCursor ?? this.getNow(),
+      limit: body.limit,
+    });
     let sessions = await Promise.all(
       rows.map(
         async (row): Promise<WatchSession> => ({
-          seasonId: row.watchSessionData.seasonId,
-          episodeId: row.watchSessionData.episodeId,
+          seasonId: row.watchSessionSeasonId,
+          episodeId: row.watchSessionEpisodeId,
           latestWatchedTimeMs: await this.watchTimeTable.getMs(
             accountId,
-            row.watchSessionData.watchSessionId,
+            row.watchSessionWatchSessionId,
           ),
-          createdTimeMs: row.watchSessionData.createdTimeMs,
+          createdTimeMs: row.watchSessionCreatedTimeMs,
         }),
       ),
     );
@@ -76,7 +75,7 @@ export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface 
       sessions,
       createdTimeCursor:
         rows.length === body.limit
-          ? rows[rows.length - 1].watchSessionData.createdTimeMs
+          ? rows[rows.length - 1].watchSessionCreatedTimeMs
           : undefined,
     };
   }

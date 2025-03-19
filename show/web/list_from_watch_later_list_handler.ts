@@ -49,17 +49,16 @@ export class ListFromWatchLaterListHandler extends ListFromWatchLaterListHandler
         `Account ${accountId} is not allowed to list from watch later list.`,
       );
     }
-    let rows = await listWatchLaterSeasons(
-      this.database,
-      accountId,
-      body.addedTimeCursor ?? this.getNow(),
-      body.limit,
-    );
+    let rows = await listWatchLaterSeasons(this.database, {
+      watchLaterSeasonWatcherIdEq: accountId,
+      watchLaterSeasonAddedTimeMsLt: body.addedTimeCursor ?? this.getNow(),
+      limit: body.limit,
+    });
     return {
-      seasonIds: rows.map((row) => row.watchLaterSeasonData.seasonId),
+      seasonIds: rows.map((row) => row.watchLaterSeasonSeasonId),
       addedTimeCursor:
         rows.length === body.limit
-          ? rows[rows.length - 1].watchLaterSeasonData.addedTimeMs
+          ? rows[rows.length - 1].watchLaterSeasonAddedTimeMs
           : undefined,
     };
   }

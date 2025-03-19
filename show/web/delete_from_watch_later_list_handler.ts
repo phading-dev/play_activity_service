@@ -49,7 +49,10 @@ export class DeleteFromWatchLaterListHandler extends DeleteFromWatchLaterListHan
     }
     await this.database.runTransactionAsync(async (transaction) => {
       await transaction.batchUpdate([
-        deleteWatchLaterSeasonStatement(accountId, body.seasonId),
+        deleteWatchLaterSeasonStatement({
+          watchLaterSeasonWatcherIdEq: accountId,
+          watchLaterSeasonSeasonIdEq: body.seasonId,
+        }),
       ]);
       await transaction.commit();
     });

@@ -27,7 +27,6 @@ TEST_RUNNER.run({
               latestEpisodeId: "episode1",
               latestWatchSessionId: "watchSession1",
               latestEpisodeIndex: 1,
-              updatedTimeMs: 1000,
             }),
           ]);
           await transaction.commit();
@@ -61,7 +60,10 @@ TEST_RUNNER.run({
       async tearDown() {
         await SPANNER_DATABASE.runTransactionAsync(async (transaction) => {
           await transaction.batchUpdate([
-            deleteWatchedSeasonStatement("account1", "season1"),
+            deleteWatchedSeasonStatement({
+              watchedSeasonWatcherIdEq: "account1",
+              watchedSeasonSeasonIdEq: "season1",
+            }),
           ]);
           await transaction.commit();
         });
