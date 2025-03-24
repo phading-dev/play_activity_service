@@ -22,3 +22,7 @@ gcloud projects add-iam-policy-binding phading-dev --member=principal://iam.goog
 
 # Create Spanner database
 gcloud spanner databases create play-activity-db --instance=balanced-db-instance
+
+# Create Bigtable table
+cbt -project phading-dev -instance single-instance createtable play-activity-table
+cbt -project phading-dev -instance single-instance createfamily play-activity-table w:maxversions=1
