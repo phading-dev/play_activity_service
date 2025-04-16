@@ -1,10 +1,10 @@
 import http = require("http");
 import { ENV_VARS } from "./env_vars";
 import { GetLatestWatchedEpisodeHandler } from "./show/node/get_latest_watched_episode_handler";
-import { GetLatestWatchedTimeOfEpisodeHandler } from "./show/node/get_latest_watched_time_of_episode_handler";
 import { ListRecentlyWatchedSeasonsHandler } from "./show/node/list_recently_watched_seaons_handler";
 import { AddToWatchLaterListHandler } from "./show/web/add_to_watch_later_list_handler";
 import { DeleteFromWatchLaterListHandler } from "./show/web/delete_from_watch_later_list_handler";
+import { GetLatestWatchedTimeOfEpisodeHandler } from "./show/web/get_latest_watched_time_of_episode_handler";
 import { ListFromWatchLaterListHandler } from "./show/web/list_from_watch_later_list_handler";
 import { ListWatchSessionsHandler } from "./show/web/list_watch_sessions_handler";
 import { WatchEpisodeHandler } from "./show/web/watch_episode_handler";
@@ -26,12 +26,12 @@ async function main() {
   service
     .addHandlerRegister(PLAY_ACTIVITY_NODE_SERVICE)
     .add(GetLatestWatchedEpisodeHandler.create())
-    .add(GetLatestWatchedTimeOfEpisodeHandler.create())
     .add(ListRecentlyWatchedSeasonsHandler.create());
   service
     .addHandlerRegister(PLAY_ACTIVITY_WEB_SERVICE)
     .add(AddToWatchLaterListHandler.create())
     .add(DeleteFromWatchLaterListHandler.create())
+    .add(GetLatestWatchedTimeOfEpisodeHandler.create())
     .add(ListFromWatchLaterListHandler.create())
     .add(ListWatchSessionsHandler.create())
     .add(WatchEpisodeHandler.create());
