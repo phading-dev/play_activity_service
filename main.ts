@@ -13,6 +13,7 @@ import {
   PLAY_ACTIVITY_WEB_SERVICE,
 } from "@phading/play_activity_service_interface/service";
 import { ServiceHandler } from "@selfage/service_handler/service_handler";
+import { CheckInWatchLaterListHandler } from "./show/web/check_in_watch_later_list_handler";
 
 async function main() {
   let service = ServiceHandler.create(
@@ -30,6 +31,7 @@ async function main() {
   service
     .addHandlerRegister(PLAY_ACTIVITY_WEB_SERVICE)
     .add(AddToWatchLaterListHandler.create())
+    .add(CheckInWatchLaterListHandler.create())
     .add(DeleteFromWatchLaterListHandler.create())
     .add(GetLatestWatchedTimeOfEpisodeHandler.create())
     .add(ListFromWatchLaterListHandler.create())
