@@ -40,7 +40,6 @@ export class ListRecentlyWatchedSeasonsHandler extends ListRecentlyWatchedSeason
         async (row): Promise<WatchedSeason> => ({
           seasonId: row.watchedSeasonSeasonId,
           latestEpisodeId: row.watchedSeasonLatestEpisodeId,
-          latestEpisodeIndex: row.watchedSeasonLatestEpisodeIndex,
           latestWatchedTimeMs: await this.watchTimeTable.getMs(
             body.watcherId,
             row.watchedSeasonLatestWatchSessionId,

@@ -26,7 +26,6 @@ TEST_RUNNER.run({
               seasonId: "season1",
               latestEpisodeId: "episode1",
               latestWatchSessionId: "watchSession1",
-              latestEpisodeIndex: 1,
               updatedTimeMs: 100,
             }),
             insertWatchedSeasonStatement({
@@ -34,7 +33,6 @@ TEST_RUNNER.run({
               seasonId: "season3",
               latestEpisodeId: "episode100",
               latestWatchSessionId: "watchSession3",
-              latestEpisodeIndex: 100,
               updatedTimeMs: 300,
             }),
             insertWatchedSeasonStatement({
@@ -42,7 +40,6 @@ TEST_RUNNER.run({
               seasonId: "season2",
               latestEpisodeId: "episode10",
               latestWatchSessionId: "watchSession2",
-              latestEpisodeIndex: 10,
               updatedTimeMs: 200,
             }),
           ]);
@@ -72,13 +69,11 @@ TEST_RUNNER.run({
                 {
                   seasonId: "season3",
                   latestEpisodeId: "episode100",
-                  latestEpisodeIndex: 100,
                   latestWatchedTimeMs: 180,
                 },
                 {
                   seasonId: "season2",
                   latestEpisodeId: "episode10",
-                  latestEpisodeIndex: 10,
                   latestWatchedTimeMs: 120,
                 },
               ],

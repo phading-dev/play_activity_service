@@ -38,7 +38,6 @@ export class GetLatestWatchedEpisodeHandler extends GetLatestWatchedEpisodeHandl
       let season = rows[0];
       return {
         episodeId: season.watchedSeasonLatestEpisodeId,
-        episodeIndex: season.watchedSeasonLatestEpisodeIndex,
         watchedTimeMs: await this.watchTimeTable.getMs(
           body.watcherId,
           season.watchedSeasonLatestWatchSessionId,

@@ -27,7 +27,6 @@ TEST_RUNNER.run({
               watcherId: "account1",
               seasonId: "season1",
               episodeId: "episode1",
-              episodeIndex: 1,
               latestWatchSessionId: "watchSession1",
             }),
           ]);
@@ -62,7 +61,6 @@ TEST_RUNNER.run({
           response,
           eqMessage(
             {
-              episodeIndex: 1,
               watchedTimeMs: 60,
             },
             GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE,
@@ -94,7 +92,6 @@ TEST_RUNNER.run({
               watcherId: "account1",
               seasonId: "season1",
               episodeId: "episode1",
-              episodeIndex: 1,
               latestWatchSessionId: "watchSession1",
             }),
           ]);
@@ -128,7 +125,6 @@ TEST_RUNNER.run({
           response,
           eqMessage(
             {
-              episodeIndex: 1,
               watchedTimeMs: 0,
             },
             GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE,

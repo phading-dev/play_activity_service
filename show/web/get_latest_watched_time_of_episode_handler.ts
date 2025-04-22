@@ -64,7 +64,6 @@ export class GetLatestWatchedTimeOfEpisodeHandler extends GetLatestWatchedTimeOf
     } else {
       let row = rows[0];
       return {
-        episodeIndex: row.watchedEpisodeEpisodeIndex,
         watchedTimeMs: await this.watchTimeTable.getMs(
           accountId,
           row.watchedEpisodeLatestWatchSessionId,

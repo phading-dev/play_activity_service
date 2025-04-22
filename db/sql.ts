@@ -118,18 +118,16 @@ export function insertWatchedSeasonStatement(
     watcherId: string,
     seasonId: string,
     latestEpisodeId?: string,
-    latestEpisodeIndex?: number,
     latestWatchSessionId?: string,
     updatedTimeMs?: number,
   }
 ): Statement {
   return {
-    sql: "INSERT WatchedSeason (watcherId, seasonId, latestEpisodeId, latestEpisodeIndex, latestWatchSessionId, updatedTimeMs) VALUES (@watcherId, @seasonId, @latestEpisodeId, @latestEpisodeIndex, @latestWatchSessionId, @updatedTimeMs)",
+    sql: "INSERT WatchedSeason (watcherId, seasonId, latestEpisodeId, latestWatchSessionId, updatedTimeMs) VALUES (@watcherId, @seasonId, @latestEpisodeId, @latestWatchSessionId, @updatedTimeMs)",
     params: {
       watcherId: args.watcherId,
       seasonId: args.seasonId,
       latestEpisodeId: args.latestEpisodeId == null ? null : args.latestEpisodeId,
-      latestEpisodeIndex: args.latestEpisodeIndex == null ? null : Spanner.float(args.latestEpisodeIndex),
       latestWatchSessionId: args.latestWatchSessionId == null ? null : args.latestWatchSessionId,
       updatedTimeMs: args.updatedTimeMs == null ? null : Spanner.float(args.updatedTimeMs),
     },
@@ -137,7 +135,6 @@ export function insertWatchedSeasonStatement(
       watcherId: { type: "string" },
       seasonId: { type: "string" },
       latestEpisodeId: { type: "string" },
-      latestEpisodeIndex: { type: "float64" },
       latestWatchSessionId: { type: "string" },
       updatedTimeMs: { type: "float64" },
     }
@@ -167,7 +164,6 @@ export interface GetWatchedSeasonRow {
   watchedSeasonWatcherId?: string,
   watchedSeasonSeasonId?: string,
   watchedSeasonLatestEpisodeId?: string,
-  watchedSeasonLatestEpisodeIndex?: number,
   watchedSeasonLatestWatchSessionId?: string,
   watchedSeasonUpdatedTimeMs?: number,
 }
@@ -187,16 +183,12 @@ export let GET_WATCHED_SEASON_ROW: MessageDescriptor<GetWatchedSeasonRow> = {
     index: 3,
     primitiveType: PrimitiveType.STRING,
   }, {
-    name: 'watchedSeasonLatestEpisodeIndex',
-    index: 4,
-    primitiveType: PrimitiveType.NUMBER,
-  }, {
     name: 'watchedSeasonLatestWatchSessionId',
-    index: 5,
+    index: 4,
     primitiveType: PrimitiveType.STRING,
   }, {
     name: 'watchedSeasonUpdatedTimeMs',
-    index: 6,
+    index: 5,
     primitiveType: PrimitiveType.NUMBER,
   }],
 };
@@ -209,7 +201,7 @@ export async function getWatchedSeason(
   }
 ): Promise<Array<GetWatchedSeasonRow>> {
   let [rows] = await runner.run({
-    sql: "SELECT WatchedSeason.watcherId, WatchedSeason.seasonId, WatchedSeason.latestEpisodeId, WatchedSeason.latestEpisodeIndex, WatchedSeason.latestWatchSessionId, WatchedSeason.updatedTimeMs FROM WatchedSeason WHERE (WatchedSeason.watcherId = @watchedSeasonWatcherIdEq AND WatchedSeason.seasonId = @watchedSeasonSeasonIdEq)",
+    sql: "SELECT WatchedSeason.watcherId, WatchedSeason.seasonId, WatchedSeason.latestEpisodeId, WatchedSeason.latestWatchSessionId, WatchedSeason.updatedTimeMs FROM WatchedSeason WHERE (WatchedSeason.watcherId = @watchedSeasonWatcherIdEq AND WatchedSeason.seasonId = @watchedSeasonSeasonIdEq)",
     params: {
       watchedSeasonWatcherIdEq: args.watchedSeasonWatcherIdEq,
       watchedSeasonSeasonIdEq: args.watchedSeasonSeasonIdEq,
@@ -225,9 +217,8 @@ export async function getWatchedSeason(
       watchedSeasonWatcherId: row.at(0).value == null ? undefined : row.at(0).value,
       watchedSeasonSeasonId: row.at(1).value == null ? undefined : row.at(1).value,
       watchedSeasonLatestEpisodeId: row.at(2).value == null ? undefined : row.at(2).value,
-      watchedSeasonLatestEpisodeIndex: row.at(3).value == null ? undefined : row.at(3).value.value,
-      watchedSeasonLatestWatchSessionId: row.at(4).value == null ? undefined : row.at(4).value,
-      watchedSeasonUpdatedTimeMs: row.at(5).value == null ? undefined : row.at(5).value.value,
+      watchedSeasonLatestWatchSessionId: row.at(3).value == null ? undefined : row.at(3).value,
+      watchedSeasonUpdatedTimeMs: row.at(4).value == null ? undefined : row.at(4).value.value,
     });
   }
   return resRows;
@@ -238,18 +229,16 @@ export function updateWatchedSeasonStatement(
     watchedSeasonWatcherIdEq: string,
     watchedSeasonSeasonIdEq: string,
     setLatestEpisodeId?: string,
-    setLatestEpisodeIndex?: number,
     setLatestWatchSessionId?: string,
     setUpdatedTimeMs?: number,
   }
 ): Statement {
   return {
-    sql: "UPDATE WatchedSeason SET latestEpisodeId = @setLatestEpisodeId, latestEpisodeIndex = @setLatestEpisodeIndex, latestWatchSessionId = @setLatestWatchSessionId, updatedTimeMs = @setUpdatedTimeMs WHERE (WatchedSeason.watcherId = @watchedSeasonWatcherIdEq AND WatchedSeason.seasonId = @watchedSeasonSeasonIdEq)",
+    sql: "UPDATE WatchedSeason SET latestEpisodeId = @setLatestEpisodeId, latestWatchSessionId = @setLatestWatchSessionId, updatedTimeMs = @setUpdatedTimeMs WHERE (WatchedSeason.watcherId = @watchedSeasonWatcherIdEq AND WatchedSeason.seasonId = @watchedSeasonSeasonIdEq)",
     params: {
       watchedSeasonWatcherIdEq: args.watchedSeasonWatcherIdEq,
       watchedSeasonSeasonIdEq: args.watchedSeasonSeasonIdEq,
       setLatestEpisodeId: args.setLatestEpisodeId == null ? null : args.setLatestEpisodeId,
-      setLatestEpisodeIndex: args.setLatestEpisodeIndex == null ? null : Spanner.float(args.setLatestEpisodeIndex),
       setLatestWatchSessionId: args.setLatestWatchSessionId == null ? null : args.setLatestWatchSessionId,
       setUpdatedTimeMs: args.setUpdatedTimeMs == null ? null : Spanner.float(args.setUpdatedTimeMs),
     },
@@ -257,7 +246,6 @@ export function updateWatchedSeasonStatement(
       watchedSeasonWatcherIdEq: { type: "string" },
       watchedSeasonSeasonIdEq: { type: "string" },
       setLatestEpisodeId: { type: "string" },
-      setLatestEpisodeIndex: { type: "float64" },
       setLatestWatchSessionId: { type: "string" },
       setUpdatedTimeMs: { type: "float64" },
     }
@@ -269,18 +257,16 @@ export function insertWatchedEpisodeStatement(
     watcherId: string,
     seasonId: string,
     episodeId: string,
-    episodeIndex?: number,
     latestWatchSessionId?: string,
     updatedTimeMs?: number,
   }
 ): Statement {
   return {
-    sql: "INSERT WatchedEpisode (watcherId, seasonId, episodeId, episodeIndex, latestWatchSessionId, updatedTimeMs) VALUES (@watcherId, @seasonId, @episodeId, @episodeIndex, @latestWatchSessionId, @updatedTimeMs)",
+    sql: "INSERT WatchedEpisode (watcherId, seasonId, episodeId, latestWatchSessionId, updatedTimeMs) VALUES (@watcherId, @seasonId, @episodeId, @latestWatchSessionId, @updatedTimeMs)",
     params: {
       watcherId: args.watcherId,
       seasonId: args.seasonId,
       episodeId: args.episodeId,
-      episodeIndex: args.episodeIndex == null ? null : Spanner.float(args.episodeIndex),
       latestWatchSessionId: args.latestWatchSessionId == null ? null : args.latestWatchSessionId,
       updatedTimeMs: args.updatedTimeMs == null ? null : Spanner.float(args.updatedTimeMs),
     },
@@ -288,7 +274,6 @@ export function insertWatchedEpisodeStatement(
       watcherId: { type: "string" },
       seasonId: { type: "string" },
       episodeId: { type: "string" },
-      episodeIndex: { type: "float64" },
       latestWatchSessionId: { type: "string" },
       updatedTimeMs: { type: "float64" },
     }
@@ -321,7 +306,6 @@ export interface GetWatchedEpisodeRow {
   watchedEpisodeWatcherId?: string,
   watchedEpisodeSeasonId?: string,
   watchedEpisodeEpisodeId?: string,
-  watchedEpisodeEpisodeIndex?: number,
   watchedEpisodeLatestWatchSessionId?: string,
   watchedEpisodeUpdatedTimeMs?: number,
 }
@@ -341,16 +325,12 @@ export let GET_WATCHED_EPISODE_ROW: MessageDescriptor<GetWatchedEpisodeRow> = {
     index: 3,
     primitiveType: PrimitiveType.STRING,
   }, {
-    name: 'watchedEpisodeEpisodeIndex',
-    index: 4,
-    primitiveType: PrimitiveType.NUMBER,
-  }, {
     name: 'watchedEpisodeLatestWatchSessionId',
-    index: 5,
+    index: 4,
     primitiveType: PrimitiveType.STRING,
   }, {
     name: 'watchedEpisodeUpdatedTimeMs',
-    index: 6,
+    index: 5,
     primitiveType: PrimitiveType.NUMBER,
   }],
 };
@@ -364,7 +344,7 @@ export async function getWatchedEpisode(
   }
 ): Promise<Array<GetWatchedEpisodeRow>> {
   let [rows] = await runner.run({
-    sql: "SELECT WatchedEpisode.watcherId, WatchedEpisode.seasonId, WatchedEpisode.episodeId, WatchedEpisode.episodeIndex, WatchedEpisode.latestWatchSessionId, WatchedEpisode.updatedTimeMs FROM WatchedEpisode WHERE (WatchedEpisode.watcherId = @watchedEpisodeWatcherIdEq AND WatchedEpisode.seasonId = @watchedEpisodeSeasonIdEq AND WatchedEpisode.episodeId = @watchedEpisodeEpisodeIdEq)",
+    sql: "SELECT WatchedEpisode.watcherId, WatchedEpisode.seasonId, WatchedEpisode.episodeId, WatchedEpisode.latestWatchSessionId, WatchedEpisode.updatedTimeMs FROM WatchedEpisode WHERE (WatchedEpisode.watcherId = @watchedEpisodeWatcherIdEq AND WatchedEpisode.seasonId = @watchedEpisodeSeasonIdEq AND WatchedEpisode.episodeId = @watchedEpisodeEpisodeIdEq)",
     params: {
       watchedEpisodeWatcherIdEq: args.watchedEpisodeWatcherIdEq,
       watchedEpisodeSeasonIdEq: args.watchedEpisodeSeasonIdEq,
@@ -382,9 +362,8 @@ export async function getWatchedEpisode(
       watchedEpisodeWatcherId: row.at(0).value == null ? undefined : row.at(0).value,
       watchedEpisodeSeasonId: row.at(1).value == null ? undefined : row.at(1).value,
       watchedEpisodeEpisodeId: row.at(2).value == null ? undefined : row.at(2).value,
-      watchedEpisodeEpisodeIndex: row.at(3).value == null ? undefined : row.at(3).value.value,
-      watchedEpisodeLatestWatchSessionId: row.at(4).value == null ? undefined : row.at(4).value,
-      watchedEpisodeUpdatedTimeMs: row.at(5).value == null ? undefined : row.at(5).value.value,
+      watchedEpisodeLatestWatchSessionId: row.at(3).value == null ? undefined : row.at(3).value,
+      watchedEpisodeUpdatedTimeMs: row.at(4).value == null ? undefined : row.at(4).value.value,
     });
   }
   return resRows;
@@ -395,18 +374,16 @@ export function updateWatchedEpisodeStatement(
     watchedEpisodeWatcherIdEq: string,
     watchedEpisodeSeasonIdEq: string,
     watchedEpisodeEpisodeIdEq: string,
-    setEpisodeIndex?: number,
     setLatestWatchSessionId?: string,
     setUpdatedTimeMs?: number,
   }
 ): Statement {
   return {
-    sql: "UPDATE WatchedEpisode SET episodeIndex = @setEpisodeIndex, latestWatchSessionId = @setLatestWatchSessionId, updatedTimeMs = @setUpdatedTimeMs WHERE (WatchedEpisode.watcherId = @watchedEpisodeWatcherIdEq AND WatchedEpisode.seasonId = @watchedEpisodeSeasonIdEq AND WatchedEpisode.episodeId = @watchedEpisodeEpisodeIdEq)",
+    sql: "UPDATE WatchedEpisode SET latestWatchSessionId = @setLatestWatchSessionId, updatedTimeMs = @setUpdatedTimeMs WHERE (WatchedEpisode.watcherId = @watchedEpisodeWatcherIdEq AND WatchedEpisode.seasonId = @watchedEpisodeSeasonIdEq AND WatchedEpisode.episodeId = @watchedEpisodeEpisodeIdEq)",
     params: {
       watchedEpisodeWatcherIdEq: args.watchedEpisodeWatcherIdEq,
       watchedEpisodeSeasonIdEq: args.watchedEpisodeSeasonIdEq,
       watchedEpisodeEpisodeIdEq: args.watchedEpisodeEpisodeIdEq,
-      setEpisodeIndex: args.setEpisodeIndex == null ? null : Spanner.float(args.setEpisodeIndex),
       setLatestWatchSessionId: args.setLatestWatchSessionId == null ? null : args.setLatestWatchSessionId,
       setUpdatedTimeMs: args.setUpdatedTimeMs == null ? null : Spanner.float(args.setUpdatedTimeMs),
     },
@@ -414,7 +391,6 @@ export function updateWatchedEpisodeStatement(
       watchedEpisodeWatcherIdEq: { type: "string" },
       watchedEpisodeSeasonIdEq: { type: "string" },
       watchedEpisodeEpisodeIdEq: { type: "string" },
-      setEpisodeIndex: { type: "float64" },
       setLatestWatchSessionId: { type: "string" },
       setUpdatedTimeMs: { type: "float64" },
     }
@@ -607,7 +583,6 @@ export interface ListWatchedSeasonsRow {
   watchedSeasonWatcherId?: string,
   watchedSeasonSeasonId?: string,
   watchedSeasonLatestEpisodeId?: string,
-  watchedSeasonLatestEpisodeIndex?: number,
   watchedSeasonLatestWatchSessionId?: string,
   watchedSeasonUpdatedTimeMs?: number,
 }
@@ -627,16 +602,12 @@ export let LIST_WATCHED_SEASONS_ROW: MessageDescriptor<ListWatchedSeasonsRow> = 
     index: 3,
     primitiveType: PrimitiveType.STRING,
   }, {
-    name: 'watchedSeasonLatestEpisodeIndex',
-    index: 4,
-    primitiveType: PrimitiveType.NUMBER,
-  }, {
     name: 'watchedSeasonLatestWatchSessionId',
-    index: 5,
+    index: 4,
     primitiveType: PrimitiveType.STRING,
   }, {
     name: 'watchedSeasonUpdatedTimeMs',
-    index: 6,
+    index: 5,
     primitiveType: PrimitiveType.NUMBER,
   }],
 };
@@ -650,7 +621,7 @@ export async function listWatchedSeasons(
   }
 ): Promise<Array<ListWatchedSeasonsRow>> {
   let [rows] = await runner.run({
-    sql: "SELECT WatchedSeason.watcherId, WatchedSeason.seasonId, WatchedSeason.latestEpisodeId, WatchedSeason.latestEpisodeIndex, WatchedSeason.latestWatchSessionId, WatchedSeason.updatedTimeMs FROM WatchedSeason WHERE (WatchedSeason.watcherId = @watchedSeasonWatcherIdEq AND WatchedSeason.updatedTimeMs < @watchedSeasonUpdatedTimeMsLt) ORDER BY WatchedSeason.updatedTimeMs DESC LIMIT @limit",
+    sql: "SELECT WatchedSeason.watcherId, WatchedSeason.seasonId, WatchedSeason.latestEpisodeId, WatchedSeason.latestWatchSessionId, WatchedSeason.updatedTimeMs FROM WatchedSeason WHERE (WatchedSeason.watcherId = @watchedSeasonWatcherIdEq AND WatchedSeason.updatedTimeMs < @watchedSeasonUpdatedTimeMsLt) ORDER BY WatchedSeason.updatedTimeMs DESC LIMIT @limit",
     params: {
       watchedSeasonWatcherIdEq: args.watchedSeasonWatcherIdEq,
       watchedSeasonUpdatedTimeMsLt: args.watchedSeasonUpdatedTimeMsLt == null ? null : Spanner.float(args.watchedSeasonUpdatedTimeMsLt),
@@ -668,9 +639,8 @@ export async function listWatchedSeasons(
       watchedSeasonWatcherId: row.at(0).value == null ? undefined : row.at(0).value,
       watchedSeasonSeasonId: row.at(1).value == null ? undefined : row.at(1).value,
       watchedSeasonLatestEpisodeId: row.at(2).value == null ? undefined : row.at(2).value,
-      watchedSeasonLatestEpisodeIndex: row.at(3).value == null ? undefined : row.at(3).value.value,
-      watchedSeasonLatestWatchSessionId: row.at(4).value == null ? undefined : row.at(4).value,
-      watchedSeasonUpdatedTimeMs: row.at(5).value == null ? undefined : row.at(5).value.value,
+      watchedSeasonLatestWatchSessionId: row.at(3).value == null ? undefined : row.at(3).value,
+      watchedSeasonUpdatedTimeMs: row.at(4).value == null ? undefined : row.at(4).value.value,
     });
   }
   return resRows;

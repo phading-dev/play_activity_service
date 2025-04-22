@@ -39,9 +39,6 @@
         - name: latestEpisodeId
           type: string
           nullable: true
-        - name: latestEpisodeIndex
-          type: float64
-          nullable: true
         - name: latestWatchSessionId
           type: string
           nullable: true
@@ -70,9 +67,6 @@
           type: string
         - name: episodeId
           type: string
-        - name: episodeIndex
-          type: float64
-          nullable: true
         - name: latestWatchSessionId
           type: string
           nullable: true

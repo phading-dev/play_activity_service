@@ -26,7 +26,6 @@ TEST_RUNNER.run({
               seasonId: "season1",
               latestEpisodeId: "episode1",
               latestWatchSessionId: "watchSession1",
-              latestEpisodeIndex: 1,
             }),
           ]);
           await transaction.commit();
@@ -49,7 +48,6 @@ TEST_RUNNER.run({
           eqMessage(
             {
               episodeId: "episode1",
-              episodeIndex: 1,
               watchedTimeMs: 60,
             },
             GET_LATEST_WATCHED_EPISODE_RESPONSE,
