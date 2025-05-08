@@ -15,7 +15,7 @@ import {
   insertWatchedEpisodeStatement,
   insertWatchedSeasonStatement,
 } from "../../db/sql";
-import { WATCH_TIME_TABLE } from "../common/watch_time_table";
+import { WATCHED_VIDEO_TIME_TABLE } from "../common/watched_video_time_table";
 import { WatchEpisodeHandler } from "./watch_episode_handler";
 import { WATCH_EPISODE_RESPONSE } from "@phading/play_activity_service_interface/show/web/interface";
 import { FetchSessionAndCheckCapabilityResponse } from "@phading/user_session_service_interface/node/interface";
@@ -40,7 +40,7 @@ TEST_RUNNER.run({
         } as FetchSessionAndCheckCapabilityResponse;
         let handler = new WatchEpisodeHandler(
           SPANNER_DATABASE,
-          WATCH_TIME_TABLE,
+          WATCHED_VIDEO_TIME_TABLE,
           serviceClientMock,
           () => "uuid1",
           () => 1000,
@@ -52,7 +52,7 @@ TEST_RUNNER.run({
           {
             seasonId: "season1",
             episodeId: "episode1",
-            watchTimeMs: 60,
+            watchedVideoTimeMs: 60,
           },
           "session1",
         );
@@ -69,7 +69,7 @@ TEST_RUNNER.run({
           "response",
         );
         assertThat(
-          await WATCH_TIME_TABLE.getMs("account1", "uuid1"),
+          await WATCHED_VIDEO_TIME_TABLE.getMs("account1", "uuid1"),
           eq(60),
           "WatchTime",
         );
@@ -186,7 +186,7 @@ TEST_RUNNER.run({
         } as FetchSessionAndCheckCapabilityResponse;
         let handler = new WatchEpisodeHandler(
           SPANNER_DATABASE,
-          WATCH_TIME_TABLE,
+          WATCHED_VIDEO_TIME_TABLE,
           serviceClientMock,
           () => "uuid1",
           () => 1000,
@@ -198,7 +198,7 @@ TEST_RUNNER.run({
           {
             seasonId: "season1",
             episodeId: "episode1",
-            watchTimeMs: 60,
+            watchedVideoTimeMs: 60,
           },
           "session1",
         );
@@ -215,7 +215,7 @@ TEST_RUNNER.run({
           "response",
         );
         assertThat(
-          await WATCH_TIME_TABLE.getMs("account1", "uuid1"),
+          await WATCHED_VIDEO_TIME_TABLE.getMs("account1", "uuid1"),
           eq(60),
           "WatchTime",
         );
@@ -325,7 +325,7 @@ TEST_RUNNER.run({
         } as FetchSessionAndCheckCapabilityResponse;
         let handler = new WatchEpisodeHandler(
           SPANNER_DATABASE,
-          WATCH_TIME_TABLE,
+          WATCHED_VIDEO_TIME_TABLE,
           serviceClientMock,
           () => "uuid1",
           () => 1000,
@@ -338,7 +338,7 @@ TEST_RUNNER.run({
             watchSessionId: "watchSession1",
             seasonId: "season1",
             episodeId: "episode1",
-            watchTimeMs: 120,
+            watchedVideoTimeMs: 120,
           },
           "session1",
         );
@@ -355,7 +355,7 @@ TEST_RUNNER.run({
           "response",
         );
         assertThat(
-          await WATCH_TIME_TABLE.getMs("account1", "watchSession1"),
+          await WATCHED_VIDEO_TIME_TABLE.getMs("account1", "watchSession1"),
           eq(120),
           "WatchTime",
         );

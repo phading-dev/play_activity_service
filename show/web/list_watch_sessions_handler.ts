@@ -1,7 +1,10 @@
 import { SERVICE_CLIENT } from "../../common/service_client";
 import { SPANNER_DATABASE } from "../../common/spanner_database";
 import { listWatchSessions } from "../../db/sql";
-import { WATCH_TIME_TABLE, WatchTimeTable } from "../common/watch_time_table";
+import {
+  WATCHED_VIDEO_TIME_TABLE,
+  WatchedVideoTimeTable,
+} from "../common/watched_video_time_table";
 import { Database } from "@google-cloud/spanner";
 import { ListWatchSessionsHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
 import {
@@ -17,7 +20,7 @@ export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface 
   public static create(): ListWatchSessionsHandler {
     return new ListWatchSessionsHandler(
       SPANNER_DATABASE,
-      WATCH_TIME_TABLE,
+      WATCHED_VIDEO_TIME_TABLE,
       SERVICE_CLIENT,
       () => Date.now(),
     );
@@ -25,7 +28,7 @@ export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface 
 
   public constructor(
     private database: Database,
-    private watchTimeTable: WatchTimeTable,
+    private watchedVideoTimeTable: WatchedVideoTimeTable,
     private serviceClient: NodeServiceClient,
     private getNow: () => number,
   ) {
@@ -63,7 +66,7 @@ export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface 
         async (row): Promise<WatchSession> => ({
           seasonId: row.watchSessionSeasonId,
           episodeId: row.watchSessionEpisodeId,
-          latestWatchedTimeMs: await this.watchTimeTable.getMs(
+          latestWatchedVideoTimeMs: await this.watchedVideoTimeTable.getMs(
             accountId,
             row.watchSessionWatchSessionId,
           ),

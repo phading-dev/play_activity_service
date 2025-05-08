@@ -1,6 +1,9 @@
 import { SPANNER_DATABASE } from "../../common/spanner_database";
 import { listWatchedSeasons } from "../../db/sql";
-import { WATCH_TIME_TABLE, WatchTimeTable } from "../common/watch_time_table";
+import {
+  WATCHED_VIDEO_TIME_TABLE,
+  WatchedVideoTimeTable,
+} from "../common/watched_video_time_table";
 import { Database } from "@google-cloud/spanner";
 import { ListRecentlyWatchedSeasonsHandlerInterface } from "@phading/play_activity_service_interface/show/node/handler";
 import {
@@ -13,14 +16,14 @@ export class ListRecentlyWatchedSeasonsHandler extends ListRecentlyWatchedSeason
   public static create(): ListRecentlyWatchedSeasonsHandler {
     return new ListRecentlyWatchedSeasonsHandler(
       SPANNER_DATABASE,
-      WATCH_TIME_TABLE,
+      WATCHED_VIDEO_TIME_TABLE,
       () => Date.now(),
     );
   }
 
   public constructor(
     private database: Database,
-    private watchTimeTable: WatchTimeTable,
+    private watchedVideoTimeTable: WatchedVideoTimeTable,
     private getNow: () => number,
   ) {
     super();
@@ -40,7 +43,7 @@ export class ListRecentlyWatchedSeasonsHandler extends ListRecentlyWatchedSeason
         async (row): Promise<WatchedSeason> => ({
           seasonId: row.watchedSeasonSeasonId,
           latestEpisodeId: row.watchedSeasonLatestEpisodeId,
-          latestWatchedTimeMs: await this.watchTimeTable.getMs(
+          latestWatchedVideoTimeMs: await this.watchedVideoTimeTable.getMs(
             body.watcherId,
             row.watchedSeasonLatestWatchSessionId,
           ),

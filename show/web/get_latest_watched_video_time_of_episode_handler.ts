@@ -1,29 +1,32 @@
 import { SERVICE_CLIENT } from "../../common/service_client";
 import { SPANNER_DATABASE } from "../../common/spanner_database";
 import { getWatchedEpisode } from "../../db/sql";
-import { WATCH_TIME_TABLE, WatchTimeTable } from "../common/watch_time_table";
-import { Database } from "@google-cloud/spanner";
-import { GetLatestWatchedTimeOfEpisodeHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
 import {
-  GetLatestWatchedTimeOfEpisodeRequestBody,
-  GetLatestWatchedTimeOfEpisodeResponse,
+  WATCHED_VIDEO_TIME_TABLE,
+  WatchedVideoTimeTable,
+} from "../common/watched_video_time_table";
+import { Database } from "@google-cloud/spanner";
+import { GetLatestWatchedVideoTimeOfEpisodeHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
+import {
+  GetLatestWatchedVideoTimeOfEpisodeRequestBody,
+  GetLatestWatchedVideoTimeOfEpisodeResponse,
 } from "@phading/play_activity_service_interface/show/web/interface";
 import { newFetchSessionAndCheckCapabilityRequest } from "@phading/user_session_service_interface/node/client";
 import { newBadRequestError, newUnauthorizedError } from "@selfage/http_error";
 import { NodeServiceClient } from "@selfage/node_service_client";
 
-export class GetLatestWatchedTimeOfEpisodeHandler extends GetLatestWatchedTimeOfEpisodeHandlerInterface {
-  public static create(): GetLatestWatchedTimeOfEpisodeHandler {
-    return new GetLatestWatchedTimeOfEpisodeHandler(
+export class GetLatestWatchedVideoTimeOfEpisodeHandler extends GetLatestWatchedVideoTimeOfEpisodeHandlerInterface {
+  public static create(): GetLatestWatchedVideoTimeOfEpisodeHandler {
+    return new GetLatestWatchedVideoTimeOfEpisodeHandler(
       SPANNER_DATABASE,
-      WATCH_TIME_TABLE,
+      WATCHED_VIDEO_TIME_TABLE,
       SERVICE_CLIENT,
     );
   }
 
   public constructor(
     private database: Database,
-    private watchTimeTable: WatchTimeTable,
+    private watchedVideoTimeTable: WatchedVideoTimeTable,
     private serviceClient: NodeServiceClient,
   ) {
     super();
@@ -31,9 +34,9 @@ export class GetLatestWatchedTimeOfEpisodeHandler extends GetLatestWatchedTimeOf
 
   public async handle(
     loggingPrefix: string,
-    body: GetLatestWatchedTimeOfEpisodeRequestBody,
+    body: GetLatestWatchedVideoTimeOfEpisodeRequestBody,
     authStr: string,
-  ): Promise<GetLatestWatchedTimeOfEpisodeResponse> {
+  ): Promise<GetLatestWatchedVideoTimeOfEpisodeResponse> {
     if (!body.seasonId) {
       throw newBadRequestError(`"seasonId" is required.`);
     }
@@ -64,7 +67,7 @@ export class GetLatestWatchedTimeOfEpisodeHandler extends GetLatestWatchedTimeOf
     } else {
       let row = rows[0];
       return {
-        watchedTimeMs: await this.watchTimeTable.getMs(
+        watchedVideoTimeMs: await this.watchedVideoTimeTable.getMs(
           accountId,
           row.watchedEpisodeLatestWatchSessionId,
         ),

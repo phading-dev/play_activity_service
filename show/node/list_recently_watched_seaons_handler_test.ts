@@ -5,7 +5,7 @@ import {
   deleteWatchedSeasonStatement,
   insertWatchedSeasonStatement,
 } from "../../db/sql";
-import { WATCH_TIME_TABLE } from "../common/watch_time_table";
+import { WATCHED_VIDEO_TIME_TABLE } from "../common/watched_video_time_table";
 import { ListRecentlyWatchedSeasonsHandler } from "./list_recently_watched_seaons_handler";
 import { LIST_RECENTLY_WATCHED_SEASONS_RESPONSE } from "@phading/play_activity_service_interface/show/node/interface";
 import { eqMessage } from "@selfage/message/test_matcher";
@@ -45,12 +45,12 @@ TEST_RUNNER.run({
           ]);
           await transaction.commit();
         });
-        await WATCH_TIME_TABLE.set("account1", "watchSession1", 60);
-        await WATCH_TIME_TABLE.set("account1", "watchSession2", 120);
-        await WATCH_TIME_TABLE.set("account1", "watchSession3", 180);
+        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession1", 60);
+        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession2", 120);
+        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession3", 180);
         let handler = new ListRecentlyWatchedSeasonsHandler(
           SPANNER_DATABASE,
-          WATCH_TIME_TABLE,
+          WATCHED_VIDEO_TIME_TABLE,
           () => 1000,
         );
 
@@ -69,12 +69,12 @@ TEST_RUNNER.run({
                 {
                   seasonId: "season3",
                   latestEpisodeId: "episode100",
-                  latestWatchedTimeMs: 180,
+                  latestWatchedVideoTimeMs: 180,
                 },
                 {
                   seasonId: "season2",
                   latestEpisodeId: "episode10",
-                  latestWatchedTimeMs: 120,
+                  latestWatchedVideoTimeMs: 120,
                 },
               ],
             },

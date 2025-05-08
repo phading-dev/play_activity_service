@@ -1,9 +1,9 @@
 import { BIGTABLE } from "../../common/bigtable_client";
 import { Table } from "@google-cloud/bigtable";
 
-export class WatchTimeTable {
-  public static create(): WatchTimeTable {
-    return new WatchTimeTable(BIGTABLE);
+export class WatchedVideoTimeTable {
+  public static create(): WatchedVideoTimeTable {
+    return new WatchedVideoTimeTable(BIGTABLE);
   }
 
   private static TABLE_PREFIX = "w";
@@ -15,15 +15,15 @@ export class WatchTimeTable {
   public async set(
     watcherId: string,
     watchSessionId: string,
-    watchTimeMs: number,
+    watchedVideoTimeMs: number,
   ): Promise<void> {
     await this.bigtable.insert([
       {
-        key: `${WatchTimeTable.TABLE_PREFIX}#${watcherId}#${watchSessionId}`,
+        key: `${WatchedVideoTimeTable.TABLE_PREFIX}#${watcherId}#${watchSessionId}`,
         data: {
-          [WatchTimeTable.COLUMN_FAMILY]: {
-            [WatchTimeTable.COLUMN_QUALIFIER]: {
-              value: watchTimeMs,
+          [WatchedVideoTimeTable.COLUMN_FAMILY]: {
+            [WatchedVideoTimeTable.COLUMN_QUALIFIER]: {
+              value: watchedVideoTimeMs,
             },
           },
         },
@@ -36,7 +36,9 @@ export class WatchTimeTable {
     watchSessionId: string,
   ): Promise<number> {
     let [rows] = await this.bigtable.getRows({
-      keys: [`${WatchTimeTable.TABLE_PREFIX}#${watcherId}#${watchSessionId}`],
+      keys: [
+        `${WatchedVideoTimeTable.TABLE_PREFIX}#${watcherId}#${watchSessionId}`,
+      ],
       filter: {
         column: {
           cellLimit: 1,
@@ -47,11 +49,11 @@ export class WatchTimeTable {
       return 0;
     } else {
       let row = rows[0];
-      return row.data[WatchTimeTable.COLUMN_FAMILY][
-        WatchTimeTable.COLUMN_QUALIFIER
+      return row.data[WatchedVideoTimeTable.COLUMN_FAMILY][
+        WatchedVideoTimeTable.COLUMN_QUALIFIER
       ][0].value;
     }
   }
 }
 
-export let WATCH_TIME_TABLE = WatchTimeTable.create();
+export let WATCHED_VIDEO_TIME_TABLE = WatchedVideoTimeTable.create();

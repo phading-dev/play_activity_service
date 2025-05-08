@@ -5,9 +5,9 @@ import {
   deleteWatchedEpisodeStatement,
   insertWatchedEpisodeStatement,
 } from "../../db/sql";
-import { WATCH_TIME_TABLE } from "../common/watch_time_table";
-import { GetLatestWatchedTimeOfEpisodeHandler } from "./get_latest_watched_time_of_episode_handler";
-import { GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE } from "@phading/play_activity_service_interface/show/web/interface";
+import { WATCHED_VIDEO_TIME_TABLE } from "../common/watched_video_time_table";
+import { GetLatestWatchedVideoTimeOfEpisodeHandler } from "./get_latest_watched_video_time_of_episode_handler";
+import { GET_LATEST_WATCHED_VIDEO_TIME_OF_EPISODE_RESPONSE } from "@phading/play_activity_service_interface/show/web/interface";
 import { FetchSessionAndCheckCapabilityResponse } from "@phading/user_session_service_interface/node/interface";
 import { eqMessage } from "@selfage/message/test_matcher";
 import { NodeServiceClientMock } from "@selfage/node_service_client/client_mock";
@@ -15,7 +15,7 @@ import { assertThat } from "@selfage/test_matcher";
 import { TEST_RUNNER } from "@selfage/test_runner";
 
 TEST_RUNNER.run({
-  name: "GetLatestWatchedTimeOfEpisodeHandlerTest",
+  name: "GetLatestWatchedVideoTimeOfEpisodeHandlerTest",
   cases: [
     {
       name: "GetLastWatchedSessionOfEpisode",
@@ -32,7 +32,7 @@ TEST_RUNNER.run({
           ]);
           await transaction.commit();
         });
-        await WATCH_TIME_TABLE.set("account1", "watchSession1", 60);
+        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession1", 60);
         let serviceClientMock = new NodeServiceClientMock();
         serviceClientMock.response = {
           accountId: "account1",
@@ -40,9 +40,9 @@ TEST_RUNNER.run({
             canConsume: true,
           },
         } as FetchSessionAndCheckCapabilityResponse;
-        let handler = new GetLatestWatchedTimeOfEpisodeHandler(
+        let handler = new GetLatestWatchedVideoTimeOfEpisodeHandler(
           SPANNER_DATABASE,
-          WATCH_TIME_TABLE,
+          WATCHED_VIDEO_TIME_TABLE,
           serviceClientMock,
         );
 
@@ -61,9 +61,9 @@ TEST_RUNNER.run({
           response,
           eqMessage(
             {
-              watchedTimeMs: 60,
+              watchedVideoTimeMs: 60,
             },
-            GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE,
+            GET_LATEST_WATCHED_VIDEO_TIME_OF_EPISODE_RESPONSE,
           ),
           "response",
         );
@@ -104,9 +104,9 @@ TEST_RUNNER.run({
             canConsume: true,
           },
         } as FetchSessionAndCheckCapabilityResponse;
-        let handler = new GetLatestWatchedTimeOfEpisodeHandler(
+        let handler = new GetLatestWatchedVideoTimeOfEpisodeHandler(
           SPANNER_DATABASE,
-          WATCH_TIME_TABLE,
+          WATCHED_VIDEO_TIME_TABLE,
           serviceClientMock,
         );
 
@@ -125,9 +125,9 @@ TEST_RUNNER.run({
           response,
           eqMessage(
             {
-              watchedTimeMs: 0,
+              watchedVideoTimeMs: 0,
             },
-            GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE,
+            GET_LATEST_WATCHED_VIDEO_TIME_OF_EPISODE_RESPONSE,
           ),
           "response",
         );
@@ -156,9 +156,9 @@ TEST_RUNNER.run({
             canConsume: true,
           },
         } as FetchSessionAndCheckCapabilityResponse;
-        let handler = new GetLatestWatchedTimeOfEpisodeHandler(
+        let handler = new GetLatestWatchedVideoTimeOfEpisodeHandler(
           SPANNER_DATABASE,
-          WATCH_TIME_TABLE,
+          WATCHED_VIDEO_TIME_TABLE,
           serviceClientMock,
         );
 
@@ -175,7 +175,7 @@ TEST_RUNNER.run({
         // Verify
         assertThat(
           response,
-          eqMessage({}, GET_LATEST_WATCHED_TIME_OF_EPISODE_RESPONSE),
+          eqMessage({}, GET_LATEST_WATCHED_VIDEO_TIME_OF_EPISODE_RESPONSE),
           "response",
         );
       },

@@ -10,7 +10,10 @@ import {
   updateWatchedEpisodeStatement,
   updateWatchedSeasonStatement,
 } from "../../db/sql";
-import { WATCH_TIME_TABLE, WatchTimeTable } from "../common/watch_time_table";
+import {
+  WATCHED_VIDEO_TIME_TABLE,
+  WatchedVideoTimeTable,
+} from "../common/watched_video_time_table";
 import { Database } from "@google-cloud/spanner";
 import { WatchEpisodeHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
 import {
@@ -25,7 +28,7 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
   public static create(): WatchEpisodeHandler {
     return new WatchEpisodeHandler(
       SPANNER_DATABASE,
-      WATCH_TIME_TABLE,
+      WATCHED_VIDEO_TIME_TABLE,
       SERVICE_CLIENT,
       () => crypto.randomUUID(),
       () => Date.now(),
@@ -34,7 +37,7 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
 
   public constructor(
     private database: Database,
-    private watchTimeTable: WatchTimeTable,
+    private watchedVideoTimeTable: WatchedVideoTimeTable,
     private serviceClient: NodeServiceClient,
     private generateUuid: () => string,
     private getNow: () => number,
@@ -53,8 +56,8 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
     if (!body.episodeId) {
       throw newBadRequestError(`"episodeId" is required.`);
     }
-    if (!body.watchTimeMs) {
-      throw newBadRequestError(`"watchTimeMs" is required.`);
+    if (!body.watchedVideoTimeMs) {
+      throw newBadRequestError(`"watchedVideoTimeMs" is required.`);
     }
     let { accountId, capabilities } = await this.serviceClient.send(
       newFetchSessionAndCheckCapabilityRequest({
@@ -140,7 +143,11 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
         await transaction.commit();
       });
     }
-    await this.watchTimeTable.set(accountId, watchSessionId, body.watchTimeMs);
+    await this.watchedVideoTimeTable.set(
+      accountId,
+      watchSessionId,
+      body.watchedVideoTimeMs,
+    );
     return {
       watchSessionId,
     };

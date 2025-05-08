@@ -1,6 +1,9 @@
 import { SPANNER_DATABASE } from "../../common/spanner_database";
 import { getWatchedSeason } from "../../db/sql";
-import { WATCH_TIME_TABLE, WatchTimeTable } from "../common/watch_time_table";
+import {
+  WATCHED_VIDEO_TIME_TABLE,
+  WatchedVideoTimeTable,
+} from "../common/watched_video_time_table";
 import { Database } from "@google-cloud/spanner";
 import { GetLatestWatchedEpisodeHandlerInterface } from "@phading/play_activity_service_interface/show/node/handler";
 import {
@@ -12,13 +15,13 @@ export class GetLatestWatchedEpisodeHandler extends GetLatestWatchedEpisodeHandl
   public static create(): GetLatestWatchedEpisodeHandler {
     return new GetLatestWatchedEpisodeHandler(
       SPANNER_DATABASE,
-      WATCH_TIME_TABLE,
+      WATCHED_VIDEO_TIME_TABLE,
     );
   }
 
   public constructor(
     private database: Database,
-    private watchTimeTable: WatchTimeTable,
+    private watchedVideoTimeTable: WatchedVideoTimeTable,
   ) {
     super();
   }
@@ -38,7 +41,7 @@ export class GetLatestWatchedEpisodeHandler extends GetLatestWatchedEpisodeHandl
       let season = rows[0];
       return {
         episodeId: season.watchedSeasonLatestEpisodeId,
-        watchedTimeMs: await this.watchTimeTable.getMs(
+        watchedVideoTimeMs: await this.watchedVideoTimeTable.getMs(
           body.watcherId,
           season.watchedSeasonLatestWatchSessionId,
         ),
