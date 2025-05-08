@@ -4,6 +4,6 @@
 - row:
     key: w#${accountId}#${watchSessionId}
     columns:
-      - name: w:t # Watch time ms
+      - name: w:t # Watched video time ms
         type: number
 ```
