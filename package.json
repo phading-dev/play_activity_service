@@ -18,10 +18,10 @@
     "**/*.yaml"
   ],
   "devDependencies": {
-    "@selfage/bundler_cli": "^5.3.0",
+    "@selfage/bundler_cli": "^5.4.0",
     "@selfage/cli": "^5.0.3",
     "@selfage/generator_cli": "^4.3.11",
-    "@selfage/spanner_schema_update_cli": "^1.4.3",
+    "@selfage/spanner_schema_update_cli": "^1.4.4",
     "@selfage/test_matcher": "^2.1.10",
     "@selfage/test_runner": "^5.2.0",
     "@selfage/tsconfig": "^1.1.0",
@@ -30,10 +30,10 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
-    "@google-cloud/bigtable": "^6.0.0",
+    "@google-cloud/bigtable": "^6.1.0",
     "@google-cloud/spanner": "^7.21.0",
-    "@phading/cluster": "^1.0.6",
-    "@phading/constants": "^0.3.9",
+    "@phading/cluster": "^1.0.7",
+    "@phading/constants": "^0.3.12",
     "@phading/play_activity_service_interface": "^1.0.10",
     "@phading/user_session_service_interface": "^1.1.0",
     "@selfage/http_error": "^1.1.2",
