@@ -19,6 +19,7 @@ kubectl create serviceaccount play-activity-service-account --namespace default
 
 # Grant database permissions to the service account
 gcloud projects add-iam-policy-binding phading-dev --member=principal://iam.googleapis.com/projects/178489203789/locations/global/workloadIdentityPools/phading-dev.svc.id.goog/subject/ns/default/sa/play-activity-service-account --role=roles/spanner.databaseUser --condition=None
+gcloud projects add-iam-policy-binding phading-dev --member=principal://iam.googleapis.com/projects/178489203789/locations/global/workloadIdentityPools/phading-dev.svc.id.goog/subject/ns/default/sa/play-activity-service-account --role=roles/bigtable.user --condition=None
 
 # Create Spanner database
 gcloud spanner databases create play-activity-db --instance=balanced-db-instance
