@@ -1,20 +1,23 @@
-import crypto = require("crypto");
+import { BIGTABLE } from "../../common/bigtable_client";
 import { SERVICE_CLIENT } from "../../common/service_client";
 import { SPANNER_DATABASE } from "../../common/spanner_database";
 import {
+  getWatchSession,
   getWatchedEpisode,
   getWatchedSeason,
   insertWatchSessionStatement,
   insertWatchedEpisodeStatement,
   insertWatchedSeasonStatement,
+  updateWatchSessionStatement,
   updateWatchedEpisodeStatement,
   updateWatchedSeasonStatement,
 } from "../../db/sql";
-import {
-  WATCHED_VIDEO_TIME_TABLE,
-  WatchedVideoTimeTable,
-} from "../common/watched_video_time_table";
+import { ENV_VARS } from "../../env_vars";
+import { LastWatchedRow } from "../common/last_watched_row";
+import { WatchedVideoTimeRow } from "../common/watched_video_time_row";
+import { Table } from "@google-cloud/bigtable";
 import { Database } from "@google-cloud/spanner";
+import { Statement } from "@google-cloud/spanner/build/src/transaction";
 import { WatchEpisodeHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
 import {
   WatchEpisodeRequestBody,
@@ -23,23 +26,22 @@ import {
 import { newFetchSessionAndCheckCapabilityRequest } from "@phading/user_session_service_interface/node/client";
 import { newBadRequestError, newUnauthorizedError } from "@selfage/http_error";
 import { NodeServiceClient } from "@selfage/node_service_client";
+import { TzDate } from "@selfage/tz_date";
 
 export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
   public static create(): WatchEpisodeHandler {
     return new WatchEpisodeHandler(
       SPANNER_DATABASE,
-      WATCHED_VIDEO_TIME_TABLE,
+      BIGTABLE,
       SERVICE_CLIENT,
-      () => crypto.randomUUID(),
       () => Date.now(),
     );
   }
 
   public constructor(
     private database: Database,
-    private watchedVideoTimeTable: WatchedVideoTimeTable,
+    private bigtable: Table,
     private serviceClient: NodeServiceClient,
-    private generateUuid: () => string,
     private getNow: () => number,
   ) {
     super();
@@ -72,11 +74,25 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
         `Account ${accountId} is not allowed to record watch session.`,
       );
     }
-    let watchSessionId = body.watchSessionId;
-    if (!watchSessionId) {
-      watchSessionId = this.generateUuid();
+    let date = TzDate.fromTimestampMs(
+      this.getNow(),
+      ENV_VARS.timezoneNegativeOffset,
+    ).toLocalDateISOString();
+    let { seasonId, episodeId } = await LastWatchedRow.get(
+      this.bigtable,
+      accountId,
+      date,
+    );
+    if (body.seasonId !== seasonId || body.episodeId !== episodeId) {
+      // TODO: Use upsert
       await this.database.runTransactionAsync(async (transaction) => {
-        let [seasonRows, episodeRows] = await Promise.all([
+        let [sessionRows, seasonRows, episodeRows] = await Promise.all([
+          getWatchSession(transaction, {
+            watchSessionWatcherIdEq: accountId,
+            watchSessionSeasonIdEq: body.seasonId,
+            watchSessionEpisodeIdEq: body.episodeId,
+            watchSessionDateEq: date,
+          }),
           getWatchedSeason(transaction, {
             watchedSeasonWatcherIdEq: accountId,
             watchedSeasonSeasonIdEq: body.seasonId,
@@ -88,22 +104,35 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
           }),
         ]);
         let now = this.getNow();
-        let statements = [
-          insertWatchSessionStatement({
-            watcherId: accountId,
-            watchSessionId,
-            seasonId: body.seasonId,
-            episodeId: body.episodeId,
-            createdTimeMs: now,
-          }),
-        ];
+        let statements = new Array<Statement>();
+        if (sessionRows.length === 0) {
+          statements.push(
+            insertWatchSessionStatement({
+              watcherId: accountId,
+              seasonId: body.seasonId,
+              episodeId: body.episodeId,
+              date,
+              updatedTimeMs: now,
+            }),
+          );
+        } else {
+          statements.push(
+            updateWatchSessionStatement({
+              watchSessionWatcherIdEq: accountId,
+              watchSessionSeasonIdEq: body.seasonId,
+              watchSessionEpisodeIdEq: body.episodeId,
+              watchSessionDateEq: date,
+              setUpdatedTimeMs: now,
+            }),
+          );
+        }
         if (seasonRows.length === 0) {
           statements.push(
             insertWatchedSeasonStatement({
               watcherId: accountId,
               seasonId: body.seasonId,
               latestEpisodeId: body.episodeId,
-              latestWatchSessionId: watchSessionId,
+              latestWatchSessionDate: date,
               updatedTimeMs: now,
             }),
           );
@@ -113,7 +142,7 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
               watchedSeasonWatcherIdEq: accountId,
               watchedSeasonSeasonIdEq: body.seasonId,
               setLatestEpisodeId: body.episodeId,
-              setLatestWatchSessionId: watchSessionId,
+              setLatestWatchSessionDate: date,
               setUpdatedTimeMs: now,
             }),
           );
@@ -124,7 +153,7 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
               watcherId: accountId,
               seasonId: body.seasonId,
               episodeId: body.episodeId,
-              latestWatchSessionId: watchSessionId,
+              latestWatchSessionDate: date,
               updatedTimeMs: now,
             }),
           );
@@ -134,7 +163,7 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
               watchedEpisodeWatcherIdEq: accountId,
               watchedEpisodeSeasonIdEq: body.seasonId,
               watchedEpisodeEpisodeIdEq: body.episodeId,
-              setLatestWatchSessionId: watchSessionId,
+              setLatestWatchSessionDate: date,
               setUpdatedTimeMs: now,
             }),
           );
@@ -143,13 +172,17 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
         await transaction.commit();
       });
     }
-    await this.watchedVideoTimeTable.set(
-      accountId,
-      watchSessionId,
-      body.watchedVideoTimeMs,
-    );
-    return {
-      watchSessionId,
-    };
+
+    await this.bigtable.insert([
+      WatchedVideoTimeRow.setEntry(
+        accountId,
+        body.seasonId,
+        body.episodeId,
+        date,
+        body.watchedVideoTimeMs,
+      ),
+      LastWatchedRow.setEntry(accountId, date, body.seasonId, body.episodeId),
+    ]);
+    return {};
   }
 }

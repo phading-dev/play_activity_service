@@ -2,33 +2,35 @@
   name: PlayActivityDatabase
   tables:
     - kind: Table
-      name: WatchSession # Watch time is stored in BigTable.
+      # Watch time is stored in BigTable. Merged by day.
+      name: WatchSession
       columns:
         - name: watcherId
           type: string
-        - name: watchSessionId
-          type: string
         - name: seasonId
           type: string
-          nullable: true
         - name: episodeId
           type: string
-          nullable: true
-        - name: createdTimeMs
+        - name: date
+          type: string
+        - name: updatedTimeMs
           type: float64
           nullable: true
       primaryKeys:
         - watcherId
-        - watchSessionId
+        - seasonId
+        - episodeId
+        - date
       indexes:
-        - name: WatchSessionByCreatedTime
+        - name: WatchSessionByUpdatedTime
           columns:
             - watcherId
-            - name: createdTimeMs
+            - name: updatedTimeMs
               desc: true
       insert: InsertWatchSession
       delete: DeleteWatchSession
       get: GetWatchSession
+      update: UpdateWatchSession
     - kind: Table
       name: WatchedSeason
       columns:
@@ -39,7 +41,7 @@
         - name: latestEpisodeId
           type: string
           nullable: true
-        - name: latestWatchSessionId
+        - name: latestWatchSessionDate
           type: string
           nullable: true
         - name: updatedTimeMs
@@ -67,7 +69,7 @@
           type: string
         - name: episodeId
           type: string
-        - name: latestWatchSessionId
+        - name: latestWatchSessionDate
           type: string
           nullable: true
         - name: updatedTimeMs
@@ -113,9 +115,9 @@
           - op: =
             lColumn: watcherId
           - op: <
-            lColumn: createdTimeMs
+            lColumn: updatedTimeMs
       orderBy:
-        - column: createdTimeMs
+        - column: updatedTimeMs
           desc: true
       withLimit: true
       get:

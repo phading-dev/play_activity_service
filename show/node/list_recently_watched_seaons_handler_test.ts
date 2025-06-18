@@ -5,7 +5,7 @@ import {
   deleteWatchedSeasonStatement,
   insertWatchedSeasonStatement,
 } from "../../db/sql";
-import { WATCHED_VIDEO_TIME_TABLE } from "../common/watched_video_time_table";
+import { WatchedVideoTimeRow } from "../common/watched_video_time_row";
 import { ListRecentlyWatchedSeasonsHandler } from "./list_recently_watched_seaons_handler";
 import { LIST_RECENTLY_WATCHED_SEASONS_RESPONSE } from "@phading/play_activity_service_interface/show/node/interface";
 import { eqMessage } from "@selfage/message/test_matcher";
@@ -25,32 +25,45 @@ TEST_RUNNER.run({
               watcherId: "account1",
               seasonId: "season1",
               latestEpisodeId: "episode1",
-              latestWatchSessionId: "watchSession1",
+              latestWatchSessionDate: "2023-10-21",
               updatedTimeMs: 100,
             }),
             insertWatchedSeasonStatement({
               watcherId: "account1",
               seasonId: "season3",
               latestEpisodeId: "episode100",
-              latestWatchSessionId: "watchSession3",
+              latestWatchSessionDate: "2023-10-23",
               updatedTimeMs: 300,
             }),
             insertWatchedSeasonStatement({
               watcherId: "account1",
               seasonId: "season2",
               latestEpisodeId: "episode10",
-              latestWatchSessionId: "watchSession2",
+              latestWatchSessionDate: "2023-10-23",
               updatedTimeMs: 200,
             }),
           ]);
           await transaction.commit();
         });
-        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession1", 60);
-        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession2", 120);
-        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession3", 180);
+        await BIGTABLE.insert([
+          WatchedVideoTimeRow.setEntry(
+            "account1",
+            "season1",
+            "episode1",
+            "2023-10-21",
+            60,
+          ),
+          WatchedVideoTimeRow.setEntry(
+            "account1",
+            "season2",
+            "episode10",
+            "2023-10-23",
+            120,
+          ),
+        ]);
         let handler = new ListRecentlyWatchedSeasonsHandler(
           SPANNER_DATABASE,
-          WATCHED_VIDEO_TIME_TABLE,
+          BIGTABLE,
           () => 1000,
         );
 
@@ -69,7 +82,7 @@ TEST_RUNNER.run({
                 {
                   seasonId: "season3",
                   latestEpisodeId: "episode100",
-                  latestWatchedVideoTimeMs: 180,
+                  latestWatchedVideoTimeMs: 0,
                 },
                 {
                   seasonId: "season2",

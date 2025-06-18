@@ -5,7 +5,7 @@ import {
   deleteWatchedSeasonStatement,
   insertWatchedSeasonStatement,
 } from "../../db/sql";
-import { WATCHED_VIDEO_TIME_TABLE } from "../common/watched_video_time_table";
+import { WatchedVideoTimeRow } from "../common/watched_video_time_row";
 import { GetLatestWatchedEpisodeHandler } from "./get_latest_watched_episode_handler";
 import { GET_LATEST_WATCHED_EPISODE_RESPONSE } from "@phading/play_activity_service_interface/show/node/interface";
 import { eqMessage } from "@selfage/message/test_matcher";
@@ -25,15 +25,23 @@ TEST_RUNNER.run({
               watcherId: "account1",
               seasonId: "season1",
               latestEpisodeId: "episode1",
-              latestWatchSessionId: "watchSession1",
+              latestWatchSessionDate: "2023-10-23",
             }),
           ]);
           await transaction.commit();
         });
-        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession1", 60);
+        await BIGTABLE.insert([
+          WatchedVideoTimeRow.setEntry(
+            "account1",
+            "season1",
+            "episode1",
+            "2023-10-23",
+            60,
+          ),
+        ]);
         let handler = new GetLatestWatchedEpisodeHandler(
           SPANNER_DATABASE,
-          WATCHED_VIDEO_TIME_TABLE,
+          BIGTABLE,
         );
 
         // Execute
@@ -74,7 +82,7 @@ TEST_RUNNER.run({
         // Prepare
         let handler = new GetLatestWatchedEpisodeHandler(
           SPANNER_DATABASE,
-          WATCHED_VIDEO_TIME_TABLE,
+          BIGTABLE,
         );
 
         // Execute

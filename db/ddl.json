@@ -5,22 +5,22 @@
       "name": "watcherId",
       "addColumnDdl": "ALTER TABLE WatchSession ADD COLUMN watcherId STRING(MAX) NOT NULL"
     }, {
-      "name": "watchSessionId",
-      "addColumnDdl": "ALTER TABLE WatchSession ADD COLUMN watchSessionId STRING(MAX) NOT NULL"
-    }, {
       "name": "seasonId",
-      "addColumnDdl": "ALTER TABLE WatchSession ADD COLUMN seasonId STRING(MAX)"
+      "addColumnDdl": "ALTER TABLE WatchSession ADD COLUMN seasonId STRING(MAX) NOT NULL"
     }, {
       "name": "episodeId",
-      "addColumnDdl": "ALTER TABLE WatchSession ADD COLUMN episodeId STRING(MAX)"
+      "addColumnDdl": "ALTER TABLE WatchSession ADD COLUMN episodeId STRING(MAX) NOT NULL"
     }, {
-      "name": "createdTimeMs",
-      "addColumnDdl": "ALTER TABLE WatchSession ADD COLUMN createdTimeMs FLOAT64"
+      "name": "date",
+      "addColumnDdl": "ALTER TABLE WatchSession ADD COLUMN date STRING(MAX) NOT NULL"
+    }, {
+      "name": "updatedTimeMs",
+      "addColumnDdl": "ALTER TABLE WatchSession ADD COLUMN updatedTimeMs FLOAT64"
     }],
-    "createTableDdl": "CREATE TABLE WatchSession (watcherId STRING(MAX) NOT NULL, watchSessionId STRING(MAX) NOT NULL, seasonId STRING(MAX), episodeId STRING(MAX), createdTimeMs FLOAT64) PRIMARY KEY (watcherId ASC, watchSessionId ASC)",
+    "createTableDdl": "CREATE TABLE WatchSession (watcherId STRING(MAX) NOT NULL, seasonId STRING(MAX) NOT NULL, episodeId STRING(MAX) NOT NULL, date STRING(MAX) NOT NULL, updatedTimeMs FLOAT64) PRIMARY KEY (watcherId ASC, seasonId ASC, episodeId ASC, date ASC)",
     "indexes": [{
-      "name": "WatchSessionByCreatedTime",
-      "createIndexDdl": "CREATE INDEX WatchSessionByCreatedTime ON WatchSession(watcherId, createdTimeMs DESC)"
+      "name": "WatchSessionByUpdatedTime",
+      "createIndexDdl": "CREATE INDEX WatchSessionByUpdatedTime ON WatchSession(watcherId, updatedTimeMs DESC)"
     }]
   }, {
     "name": "WatchedSeason",
@@ -34,13 +34,13 @@
       "name": "latestEpisodeId",
       "addColumnDdl": "ALTER TABLE WatchedSeason ADD COLUMN latestEpisodeId STRING(MAX)"
     }, {
-      "name": "latestWatchSessionId",
-      "addColumnDdl": "ALTER TABLE WatchedSeason ADD COLUMN latestWatchSessionId STRING(MAX)"
+      "name": "latestWatchSessionDate",
+      "addColumnDdl": "ALTER TABLE WatchedSeason ADD COLUMN latestWatchSessionDate STRING(MAX)"
     }, {
       "name": "updatedTimeMs",
       "addColumnDdl": "ALTER TABLE WatchedSeason ADD COLUMN updatedTimeMs FLOAT64"
     }],
-    "createTableDdl": "CREATE TABLE WatchedSeason (watcherId STRING(MAX) NOT NULL, seasonId STRING(MAX) NOT NULL, latestEpisodeId STRING(MAX), latestWatchSessionId STRING(MAX), updatedTimeMs FLOAT64) PRIMARY KEY (watcherId ASC, seasonId ASC)",
+    "createTableDdl": "CREATE TABLE WatchedSeason (watcherId STRING(MAX) NOT NULL, seasonId STRING(MAX) NOT NULL, latestEpisodeId STRING(MAX), latestWatchSessionDate STRING(MAX), updatedTimeMs FLOAT64) PRIMARY KEY (watcherId ASC, seasonId ASC)",
     "indexes": [{
       "name": "WatchedSeasonByUpdatedTime",
       "createIndexDdl": "CREATE INDEX WatchedSeasonByUpdatedTime ON WatchedSeason(watcherId, updatedTimeMs DESC)"
@@ -57,13 +57,13 @@
       "name": "episodeId",
       "addColumnDdl": "ALTER TABLE WatchedEpisode ADD COLUMN episodeId STRING(MAX) NOT NULL"
     }, {
-      "name": "latestWatchSessionId",
-      "addColumnDdl": "ALTER TABLE WatchedEpisode ADD COLUMN latestWatchSessionId STRING(MAX)"
+      "name": "latestWatchSessionDate",
+      "addColumnDdl": "ALTER TABLE WatchedEpisode ADD COLUMN latestWatchSessionDate STRING(MAX)"
     }, {
       "name": "updatedTimeMs",
       "addColumnDdl": "ALTER TABLE WatchedEpisode ADD COLUMN updatedTimeMs FLOAT64"
     }],
-    "createTableDdl": "CREATE TABLE WatchedEpisode (watcherId STRING(MAX) NOT NULL, seasonId STRING(MAX) NOT NULL, episodeId STRING(MAX) NOT NULL, latestWatchSessionId STRING(MAX), updatedTimeMs FLOAT64) PRIMARY KEY (watcherId ASC, seasonId ASC, episodeId ASC)",
+    "createTableDdl": "CREATE TABLE WatchedEpisode (watcherId STRING(MAX) NOT NULL, seasonId STRING(MAX) NOT NULL, episodeId STRING(MAX) NOT NULL, latestWatchSessionDate STRING(MAX), updatedTimeMs FLOAT64) PRIMARY KEY (watcherId ASC, seasonId ASC, episodeId ASC)",
     "indexes": []
   }, {
     "name": "WatchLaterSeason",

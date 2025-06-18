@@ -5,7 +5,7 @@ import {
   deleteWatchSessionStatement,
   insertWatchSessionStatement,
 } from "../../db/sql";
-import { WATCHED_VIDEO_TIME_TABLE } from "../common/watched_video_time_table";
+import { WatchedVideoTimeRow } from "../common/watched_video_time_row";
 import { ListWatchSessionsHandler } from "./list_watch_sessions_handler";
 import { LIST_WATCH_SESSIONS_RESPONSE } from "@phading/play_activity_service_interface/show/web/interface";
 import { FetchSessionAndCheckCapabilityResponse } from "@phading/user_session_service_interface/node/interface";
@@ -25,31 +25,44 @@ TEST_RUNNER.run({
           await transaction.batchUpdate([
             insertWatchSessionStatement({
               watcherId: "account1",
-              watchSessionId: "watchSession1",
               seasonId: "season1",
               episodeId: "episode1",
-              createdTimeMs: 100,
+              date: "2023-10-23",
+              updatedTimeMs: 100,
             }),
             insertWatchSessionStatement({
               watcherId: "account1",
-              watchSessionId: "watchSession2",
               seasonId: "season2",
               episodeId: "episode2",
-              createdTimeMs: 200,
+              date: "2023-10-23",
+              updatedTimeMs: 200,
             }),
             insertWatchSessionStatement({
               watcherId: "account1",
-              watchSessionId: "watchSession3",
               seasonId: "season1",
               episodeId: "episode1",
-              createdTimeMs: 300,
+              date: "2023-10-24",
+              updatedTimeMs: 300,
             }),
           ]);
           await transaction.commit();
         });
-        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession1", 60);
-        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession2", 120);
-        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession3", 180);
+        await BIGTABLE.insert([
+          WatchedVideoTimeRow.setEntry(
+            "account1",
+            "season1",
+            "episode1",
+            "2023-10-23",
+            60,
+          ),
+          WatchedVideoTimeRow.setEntry(
+            "account1",
+            "season2",
+            "episode2",
+            "2023-10-23",
+            120,
+          ),
+        ]);
         let serviceClientMock = new NodeServiceClientMock();
         serviceClientMock.response = {
           accountId: "account1",
@@ -59,7 +72,7 @@ TEST_RUNNER.run({
         } as FetchSessionAndCheckCapabilityResponse;
         let handler = new ListWatchSessionsHandler(
           SPANNER_DATABASE,
-          WATCHED_VIDEO_TIME_TABLE,
+          BIGTABLE,
           serviceClientMock,
           () => 1000,
         );
@@ -77,17 +90,17 @@ TEST_RUNNER.run({
                   {
                     seasonId: "season1",
                     episodeId: "episode1",
-                    latestWatchedVideoTimeMs: 180,
-                    createdTimeMs: 300,
+                    date: "2023-10-24",
+                    latestWatchedVideoTimeMs: 0,
                   },
                   {
                     seasonId: "season2",
                     episodeId: "episode2",
+                    date: "2023-10-23",
                     latestWatchedVideoTimeMs: 120,
-                    createdTimeMs: 200,
                   },
                 ],
-                createdTimeCursor: 200,
+                updatedTimeCursor: 200,
               },
               LIST_WATCH_SESSIONS_RESPONSE,
             ),
@@ -99,7 +112,7 @@ TEST_RUNNER.run({
           // Execute
           let response = await handler.handle(
             "",
-            { limit: 2, createdTimeCursor: 200 },
+            { limit: 2, updatedTimeCursor: 200 },
             "session1",
           );
 
@@ -112,8 +125,8 @@ TEST_RUNNER.run({
                   {
                     seasonId: "season1",
                     episodeId: "episode1",
+                    date: "2023-10-23",
                     latestWatchedVideoTimeMs: 60,
-                    createdTimeMs: 100,
                   },
                 ],
               },
@@ -128,15 +141,21 @@ TEST_RUNNER.run({
           await transaction.batchUpdate([
             deleteWatchSessionStatement({
               watchSessionWatcherIdEq: "account1",
-              watchSessionWatchSessionIdEq: "watchSession1",
+              watchSessionSeasonIdEq: "season1",
+              watchSessionEpisodeIdEq: "episode1",
+              watchSessionDateEq: "2023-10-23",
             }),
             deleteWatchSessionStatement({
               watchSessionWatcherIdEq: "account1",
-              watchSessionWatchSessionIdEq: "watchSession2",
+              watchSessionSeasonIdEq: "season2",
+              watchSessionEpisodeIdEq: "episode2",
+              watchSessionDateEq: "2023-10-23",
             }),
             deleteWatchSessionStatement({
               watchSessionWatcherIdEq: "account1",
-              watchSessionWatchSessionIdEq: "watchSession3",
+              watchSessionSeasonIdEq: "season1",
+              watchSessionEpisodeIdEq: "episode1",
+              watchSessionDateEq: "2023-10-24",
             }),
           ]);
           await transaction.commit();

@@ -5,7 +5,7 @@ import {
   deleteWatchedEpisodeStatement,
   insertWatchedEpisodeStatement,
 } from "../../db/sql";
-import { WATCHED_VIDEO_TIME_TABLE } from "../common/watched_video_time_table";
+import { WatchedVideoTimeRow } from "../common/watched_video_time_row";
 import { GetLatestWatchedVideoTimeOfEpisodeHandler } from "./get_latest_watched_video_time_of_episode_handler";
 import { GET_LATEST_WATCHED_VIDEO_TIME_OF_EPISODE_RESPONSE } from "@phading/play_activity_service_interface/show/web/interface";
 import { FetchSessionAndCheckCapabilityResponse } from "@phading/user_session_service_interface/node/interface";
@@ -27,12 +27,20 @@ TEST_RUNNER.run({
               watcherId: "account1",
               seasonId: "season1",
               episodeId: "episode1",
-              latestWatchSessionId: "watchSession1",
+              latestWatchSessionDate: "2023-10-23",
             }),
           ]);
           await transaction.commit();
         });
-        await WATCHED_VIDEO_TIME_TABLE.set("account1", "watchSession1", 60);
+        await BIGTABLE.insert([
+          WatchedVideoTimeRow.setEntry(
+            "account1",
+            "season1",
+            "episode1",
+            "2023-10-23",
+            60,
+          ),
+        ]);
         let serviceClientMock = new NodeServiceClientMock();
         serviceClientMock.response = {
           accountId: "account1",
@@ -42,7 +50,7 @@ TEST_RUNNER.run({
         } as FetchSessionAndCheckCapabilityResponse;
         let handler = new GetLatestWatchedVideoTimeOfEpisodeHandler(
           SPANNER_DATABASE,
-          WATCHED_VIDEO_TIME_TABLE,
+          BIGTABLE,
           serviceClientMock,
         );
 
@@ -92,7 +100,7 @@ TEST_RUNNER.run({
               watcherId: "account1",
               seasonId: "season1",
               episodeId: "episode1",
-              latestWatchSessionId: "watchSession1",
+              latestWatchSessionDate: "2023-10-23",
             }),
           ]);
           await transaction.commit();
@@ -106,7 +114,7 @@ TEST_RUNNER.run({
         } as FetchSessionAndCheckCapabilityResponse;
         let handler = new GetLatestWatchedVideoTimeOfEpisodeHandler(
           SPANNER_DATABASE,
-          WATCHED_VIDEO_TIME_TABLE,
+          BIGTABLE,
           serviceClientMock,
         );
 
@@ -158,7 +166,7 @@ TEST_RUNNER.run({
         } as FetchSessionAndCheckCapabilityResponse;
         let handler = new GetLatestWatchedVideoTimeOfEpisodeHandler(
           SPANNER_DATABASE,
-          WATCHED_VIDEO_TIME_TABLE,
+          BIGTABLE,
           serviceClientMock,
         );
 

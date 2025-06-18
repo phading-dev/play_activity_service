@@ -1,10 +1,9 @@
+import { BIGTABLE } from "../../common/bigtable_client";
 import { SERVICE_CLIENT } from "../../common/service_client";
 import { SPANNER_DATABASE } from "../../common/spanner_database";
 import { listWatchSessions } from "../../db/sql";
-import {
-  WATCHED_VIDEO_TIME_TABLE,
-  WatchedVideoTimeTable,
-} from "../common/watched_video_time_table";
+import { WatchedVideoTimeRow } from "../common/watched_video_time_row";
+import { Table } from "@google-cloud/bigtable";
 import { Database } from "@google-cloud/spanner";
 import { ListWatchSessionsHandlerInterface } from "@phading/play_activity_service_interface/show/web/handler";
 import {
@@ -20,7 +19,7 @@ export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface 
   public static create(): ListWatchSessionsHandler {
     return new ListWatchSessionsHandler(
       SPANNER_DATABASE,
-      WATCHED_VIDEO_TIME_TABLE,
+      BIGTABLE,
       SERVICE_CLIENT,
       () => Date.now(),
     );
@@ -28,7 +27,7 @@ export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface 
 
   public constructor(
     private database: Database,
-    private watchedVideoTimeTable: WatchedVideoTimeTable,
+    private bigtable: Table,
     private serviceClient: NodeServiceClient,
     private getNow: () => number,
   ) {
@@ -58,7 +57,7 @@ export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface 
     }
     let rows = await listWatchSessions(this.database, {
       watchSessionWatcherIdEq: accountId,
-      watchSessionCreatedTimeMsLt: body.createdTimeCursor ?? this.getNow(),
+      watchSessionUpdatedTimeMsLt: body.updatedTimeCursor ?? this.getNow(),
       limit: body.limit,
     });
     let sessions = await Promise.all(
@@ -66,19 +65,22 @@ export class ListWatchSessionsHandler extends ListWatchSessionsHandlerInterface 
         async (row): Promise<WatchSession> => ({
           seasonId: row.watchSessionSeasonId,
           episodeId: row.watchSessionEpisodeId,
-          latestWatchedVideoTimeMs: await this.watchedVideoTimeTable.getMs(
+          date: row.watchSessionDate,
+          latestWatchedVideoTimeMs: await WatchedVideoTimeRow.getMs(
+            this.bigtable,
             accountId,
-            row.watchSessionWatchSessionId,
+            row.watchSessionSeasonId,
+            row.watchSessionEpisodeId,
+            row.watchSessionDate,
           ),
-          createdTimeMs: row.watchSessionCreatedTimeMs,
         }),
       ),
     );
     return {
       sessions,
-      createdTimeCursor:
+      updatedTimeCursor:
         rows.length === body.limit
-          ? rows[rows.length - 1].watchSessionCreatedTimeMs
+          ? rows[rows.length - 1].watchSessionUpdatedTimeMs
           : undefined,
     };
   }
