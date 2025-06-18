@@ -58,7 +58,7 @@ export class WatchEpisodeHandler extends WatchEpisodeHandlerInterface {
     if (!body.episodeId) {
       throw newBadRequestError(`"episodeId" is required.`);
     }
-    if (!body.watchedVideoTimeMs) {
+    if (body.watchedVideoTimeMs == null) {
       throw newBadRequestError(`"watchedVideoTimeMs" is required.`);
     }
     let { accountId, capabilities } = await this.serviceClient.send(
